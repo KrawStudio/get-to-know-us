@@ -5,30 +5,30 @@ const gameState = {
     currentLocation: null,
     visitedLocations: new Set(),
     inventory: {
-        doll: true,    // Куколка-оберег (начальный предмет) - переброс кубиков
-        sword: false,  // Меч-кладенец (+3 к броску)
-        amulet: false  // Защитный амулет (побег из боя)
+        doll: true,
+        sword: false,
+        amulet: false
     },
     monstersDefeated: 0,
     currentMonsterPower: 0,
     currentDiceRoll: 0,
     usedSword: false,
+    
+    // Новая система координат для карт
+    cards: new Map(), // key: "x-y", value: card data
+    currentCardPos: { x: 0, y: 0 }, // текущая позиция в сетке
+    
+    // Последовательность локаций
     locationSequence: [
         'start', 'about', 'monster1', 'purpose', 'monster2', 
         'cooperation', 'monster3', 'team'
     ],
-    currentLocationIndex: -1
+    currentLocationIndex: 0
 };
 
 // DOM elements
 const deck = document.getElementById('deck');
-const slots = {
-    center: document.getElementById('center-slot'),
-    top: document.getElementById('slot-top'),
-    left: document.getElementById('slot-left'),
-    right: document.getElementById('slot-right'),
-    bottom: document.getElementById('slot-bottom')
-};
+const gameBoard = document.getElementById('game-board');
 const inventoryPanel = {
     doll: document.getElementById('doll-card'),
     sword: document.getElementById('sword-card'),
@@ -40,22 +40,37 @@ const locationData = {
     start: {
         name: 'Стартовая локация',
         image: 'assets/start.png',
-        description: 'Солдат возвращается с русско-японской войны. Его сны становятся полем битвы с внутренними демонами... Вы получаете куколку-оберег для защиты в этом кошмарном путешествии.'
+        description: 'Солдат возвращается с русско-японской войны. Его сны становятся полем битвы с внутренними демонами...'
     },
     about: {
         name: 'Об игре',
         image: 'assets/card-about.png',
         description: `ЛОР\nСеттинг – временной период после русско-японской войны\nБэкграунд игрового цикла – солдат, вернувшийся с войны во снах видит кошмары, где сражается с японскими мифическими существами.\nТаким образом игра представляет собой борьбу с внутренними монстрами (ПТСР) и, в зависимости от исхода партии, исцеление или безумие героя\nФормат игры – один против всех. Герой против трех монстров`
     },
+    monster1: {
+        name: 'Встреча с Юрэй',
+        image: 'assets/card-monster1.png',
+        description: 'Призрак павшего воина. Его холодное прикосновение замораживает душу...'
+    },
     purpose: {
         name: 'Для кого и зачем',
         image: 'assets/card-purpose.png',
         description: `Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душой компании. Мы создаём игру, которая станет его новым козырем в коллекции.\n\nНаша игра идеально подойдёт для трёх сегментов игроков:\n\nСтратеги и тактики. Тем, кто любит выстраивать стратегии, комбинировать карты и наслаждаться чувством контроля над сложной системой.\n\nФанаты мифологии. Те, кто изучает культуру стран, любит погружаться в атмосферные сеттинги. Это люди, которые увлекаются русским и/или японским фольклором, а еще оценят их тонкое переплетение.\n\nВизуалы и эстеты. Те, для кого важен визуальный стиль. Мы создаем визуал, где старославянские узоры встречаются с лаконичной японской графикой.\n\nКому понравится? (Смежный игровой опыт):\nЕсли вы играли в: \n«Ярость дракулы», \n«Шепот за стеной»,\n«Нечто», \n«Тираны подземья», \n«Иниш», \n«Кто накормит кракена?». \nТо вероятнее всего, вам порекомендуют «Сон журавля».`
     },
+    monster2: {
+        name: 'Битва с Каппой',
+        image: 'assets/card-monster2.png',
+        description: 'Речной демон с чашей воды на голове. Опасайтесь его хватки...'
+    },
     cooperation: {
         name: 'Сотрудничество',
         image: 'assets/card-coop.png',
         description: `Что мы предлагаем партнёру-издателю:\n\nГотовый, протестированный концепт\nМы предлагаем прототип настольной игры с продуманным дизайном карт, правилами и готовой визуальной концепцией. Весь предпродакшн — на нас.\n\nУникальное трансмедийное преимущество.\nПараллельно мы ведём разработку компьютерной игры «Сон журавля» — это трансмедийное расширение настольной, но более нарративно насыщенная и продолжительная игра, предназначенная для личного прохождения.\n\nС точки зрения маркетинга — это хорошая возможность для кросс-промоушена. Выход компьютерной игры подогреет интерес к настольной, и наоборот. Мы создаём целый мир для нашей аудитории.\n\nИнициативная и вовлечённая команда.\nМы горим своим проектом. Мы готовы активно участвовать на всех этапов: от доработки дизайна и организации тестирований до поддержки маркетинговых активностей. Будем рады стать вашими партнерами!\n\nЧто мы ищем от партнёра:\n\nЭкспертизу и поддержку в издании.\nМы хотим работать с профессионалами, которые помогут нам вывести игру на рынок и поддержать нас на этапах производстве продукции и дистрибуции.\n\nПартнёрство в маркетинге и продвижении.\nМы верим в наш продукт и готовы вкладывать силы, но нам нужна ваша мощь и опыт в том, чтобы громко заявить о себе и донести игру до нашей целевой аудитории.`
+    },
+    monster3: {
+        name: 'Схватка с Они',
+        image: 'assets/card-monster3.png',
+        description: 'Свирепый огненный демон. Его ярость не знает границ...'
     },
     team: {
         name: 'О команде',
@@ -93,14 +108,24 @@ function initGame() {
     inventoryPanel.doll.addEventListener('click', useDollFromInventory);
     inventoryPanel.sword.addEventListener('click', useSwordFromInventory);
     inventoryPanel.amulet.addEventListener('click', useAmuletFromInventory);
+    
+    // Direction cards event delegation
+    document.getElementById('directions-panel').addEventListener('click', (e) => {
+        const dirCard = e.target.closest('.dir-card');
+        if (dirCard && !dirCard.classList.contains('disabled')) {
+            selectDirection(dirCard.dataset.direction);
+        }
+    });
 }
 
 function handleDeckClick() {
     if (!gameState.deckMoved) {
+        // Первый клик - перемещаем колоду и показываем стартовую локацию
         moveDeckToCorner();
-        revealNextLocation();
+        revealStartLocation();
         gameState.deckMoved = true;
     } else if (gameState.phase === 'location') {
+        // Последующие клики - выкладываем карты вокруг текущей локации
         dealLocationCards();
         gameState.phase = 'chooseDirection';
         showDirectionsPanel();
@@ -111,40 +136,48 @@ function moveDeckToCorner() {
     deck.classList.add('moved');
 }
 
-function revealNextLocation() {
-    gameState.currentLocationIndex++;
-    const locationKey = gameState.locationSequence[gameState.currentLocationIndex];
-    const location = locationData[locationKey];
-    
-    if (!location) return;
-
-    slots.center.innerHTML = '';
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `<img src="${location.image}" alt="${location.name}" />`;
-    card.addEventListener('click', () => showLocationInfo(locationKey));
-    
-    slots.center.appendChild(card);
-    slots.center.classList.add('occupied');
-    
+function revealStartLocation() {
+    const locationKey = 'start';
+    createLocationCard(0, 0, locationKey, true);
     gameState.currentLocation = locationKey;
     gameState.visitedLocations.add(locationKey);
-    updateLocationInfo();
-    
-    if (locationKey.includes('monster')) {
-        startCombat(locationKey);
-    } else if (['about', 'purpose', 'cooperation', 'team'].includes(locationKey)) {
-        showLocationInfo(locationKey);
-    }
-    
+    showLocationInfo(locationKey);
     gameState.phase = 'location';
 }
 
+function createLocationCard(x, y, locationKey, isOpen = false) {
+    const location = locationData[locationKey];
+    if (!location) return null;
+
+    const card = document.createElement('div');
+    card.className = `location-card ${isOpen ? 'active' : 'back'}`;
+    card.dataset.pos = `${x}-${y}`;
+    card.dataset.location = locationKey;
+    
+    if (isOpen) {
+        card.innerHTML = `<img src="${location.image}" alt="${location.name}" />`;
+        card.addEventListener('click', () => showLocationInfo(locationKey));
+    } else {
+        card.innerHTML = `<img src="assets/back.png" alt="Карта локации" />`;
+    }
+    
+    gameBoard.appendChild(card);
+    gameState.cards.set(`${x}-${y}`, { x, y, locationKey, isOpen });
+    
+    return card;
+}
+
 function dealLocationCards() {
-    Object.values(slots).forEach(slot => {
-        if (slot !== slots.center) {
-            slot.classList.add('occupied');
-            slot.innerHTML = '<div class="card-back"></div>';
+    const directions = [
+        { x: 0, y: -1, pos: '0-1' },    // top
+        { x: -1, y: 0, pos: '-1-0' },   // left
+        { x: 1, y: 0, pos: '1-0' },     // right
+        { x: 0, y: 1, pos: '0--1' }     // bottom
+    ];
+    
+    directions.forEach(dir => {
+        if (!gameState.cards.has(dir.pos)) {
+            createLocationCard(dir.x, dir.y, 'back', false);
         }
     });
 }
@@ -154,18 +187,64 @@ function showDirectionsPanel() {
 }
 
 function selectDirection(direction) {
-    document.getElementById('directions-panel').classList.add('hidden');
-    clearSlots();
-    revealNextLocation();
+    const directionMap = {
+        'up': { x: 0, y: -1 },
+        'left': { x: -1, y: 0 },
+        'right': { x: 1, y: 0 },
+        'down': { x: 0, y: 1 }
+    };
+    
+    const targetPos = directionMap[direction];
+    const posKey = `${targetPos.x}-${targetPos.y}`;
+    
+    // Проверяем, есть ли карта в выбранном направлении
+    if (gameState.cards.has(posKey)) {
+        const card = gameState.cards.get(posKey);
+        if (!card.isOpen) {
+            // Открываем следующую локацию в последовательности
+            gameState.currentLocationIndex++;
+            const nextLocation = gameState.locationSequence[gameState.currentLocationIndex];
+            
+            if (nextLocation) {
+                openLocationCard(targetPos.x, targetPos.y, nextLocation);
+                document.getElementById('directions-panel').classList.add('hidden');
+                gameState.phase = 'location';
+            }
+        }
+    }
 }
 
-function clearSlots() {
-    Object.values(slots).forEach(slot => {
-        if (slot !== slots.center) {
-            slot.classList.remove('occupied');
-            slot.innerHTML = '';
+function openLocationCard(x, y, locationKey) {
+    const posKey = `${x}-${y}`;
+    const cardElement = document.querySelector(`[data-pos="${posKey}"]`);
+    
+    if (cardElement) {
+        const location = locationData[locationKey];
+        cardElement.classList.remove('back');
+        cardElement.classList.add('active');
+        cardElement.innerHTML = `<img src="${location.image}" alt="${location.name}" />`;
+        cardElement.addEventListener('click', () => showLocationInfo(locationKey));
+        
+        // Обновляем состояние
+        gameState.cards.set(posKey, { x, y, locationKey, isOpen: true });
+        gameState.currentLocation = locationKey;
+        gameState.visitedLocations.add(locationKey);
+        gameState.currentCardPos = { x, y };
+        
+        // Снимаем активность с предыдущей карты
+        document.querySelectorAll('.location-card.active').forEach(card => {
+            if (card !== cardElement) {
+                card.classList.remove('active');
+            }
+        });
+        
+        // Если это монстр - начинаем бой
+        if (locationKey.includes('monster')) {
+            startCombat(locationKey);
+        } else if (['about', 'purpose', 'cooperation', 'team'].includes(locationKey)) {
+            showLocationInfo(locationKey);
         }
-    });
+    }
 }
 
 function startCombat(monsterKey) {
