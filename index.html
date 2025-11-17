@@ -1,118 +1,106 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Сон Журавля — настольная карточная игра</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сон Журавля</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="board">
-    <h1 class="title">СОН ЖУРАВЛЯ</h1>
-    <p class="subtitle">русско-японская мифология в настольной игре</p>
+    <div class="game-container">
+        <!-- Заголовок -->
+        <header class="game-header">
+            <h1>СОН ЖУРАВЛЯ</h1>
+            <p>Давайте знакомиться!</p>
+        </header>
 
-    <!-- Deck (колода) -->
-    <div id="deck" class="card back" title="Нажмите, чтобы выложить стартовую локацию">
-      <img src="assets/back.png" alt="Колода карт" />
+        <!-- Игровое поле -->
+        <div class="game-board" id="gameBoard">
+            <!-- Карты будут добавляться сюда -->
+        </div>
+
+        <!-- Колода -->
+        <div class="deck" id="deck">
+            <img src="assets/back.png" alt="Колода карт">
+        </div>
+
+        <!-- Панель предметов -->
+        <div class="inventory-panel" id="inventoryPanel">
+            <div class="inventory-card hidden" id="dollCard" data-type="doll">
+                <img src="assets/item-doll.png" alt="Куколка-оберег">
+                <span>Куколка-оберег</span>
+            </div>
+            <div class="inventory-card hidden" id="swordCard" data-type="sword">
+                <img src="assets/item-sword.png" alt="Меч-кладенец">
+                <span>Меч-кладенец</span>
+            </div>
+            <div class="inventory-card hidden" id="amuletCard" data-type="amulet">
+                <img src="assets/item-amulet.png" alt="Защитный амулет">
+                <span>Защитный амулет</span>
+            </div>
+        </div>
+
+        <!-- Панель направлений -->
+        <div class="directions-panel hidden" id="directionsPanel">
+            <h3>Выберите направление:</h3>
+            <div class="directions-container">
+                <div class="direction-card" data-direction="top">
+                    <img src="assets/direction-up.png" alt="Вперёд">
+                    <span>Вперёд</span>
+                </div>
+                <div class="direction-card" data-direction="left">
+                    <img src="assets/direction-left.png" alt="Налево">
+                    <span>Налево</span>
+                </div>
+                <div class="direction-card" data-direction="right">
+                    <img src="assets/direction-right.png" alt="Направо">
+                    <span>Направо</span>
+                </div>
+                <div class="direction-card" data-direction="bottom">
+                    <img src="assets/direction-down.png" alt="Назад">
+                    <span>Назад</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальные окна -->
+        <div class="modal hidden" id="gameModal">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <h2 id="modalTitle">Заголовок</h2>
+                <div id="modalContent">
+                    <p>Содержимое модального окна...</p>
+                </div>
+                <button class="btn" id="modalConfirm">Понятно</button>
+            </div>
+        </div>
+
+        <div class="modal hidden" id="combatModal">
+            <div class="modal-content combat">
+                <h2 id="combatTitle">Столкновение с монстром!</h2>
+                <div class="combat-info">
+                    <p>Сила противника: <strong id="monsterPower">10</strong></p>
+                    <p>Нужно выбросить: <strong id="requiredPower">10+</strong></p>
+                </div>
+                <div class="dice-container">
+                    <button class="btn" id="rollDice">Бросить 2D6</button>
+                    <div class="dice-result" id="diceResult">—</div>
+                </div>
+                <div class="combat-choices hidden" id="combatChoices">
+                    <p>Использовать предмет:</p>
+                    <button class="btn item-btn" id="useDoll">Куколка-оберег (переброс)</button>
+                    <button class="btn item-btn" id="useSword">Меч-кладенец (+3 к броску)</button>
+                    <button class="btn item-btn" id="useAmulet">Амулет (сбежать)</button>
+                </div>
+                <div class="weapon-choice hidden" id="weaponChoice">
+                    <p>Выберите способ атаки:</p>
+                    <button class="btn" id="useBareHands">Биться голыми руками</button>
+                    <button class="btn" id="useSwordCombat">Использовать меч</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Play area -->
-    <div id="play-area">
-      <div id="center-slot" class="slot"></div>
-      <div id="slot-top" class="slot"></div>
-      <div id="slot-left" class="slot"></div>
-      <div id="slot-right" class="slot"></div>
-      <div id="slot-bottom" class="slot"></div>
-    </div>
-
-    <!-- Inventory panel -->
-    <aside id="inventory-panel">
-      <div id="doll-card" class="inventory-card hidden" data-type="doll">
-        <img src="assets/item-doll.png" alt="Куколка-оберег" />
-        <div class="item-label">Куколка-оберег</div>
-      </div>
-      <div id="sword-card" class="inventory-card hidden" data-type="sword">
-        <img src="assets/item-sword.png" alt="Меч-кладенец" />
-        <div class="item-label">Меч-кладенец</div>
-      </div>
-      <div id="amulet-card" class="inventory-card hidden" data-type="amulet">
-        <img src="assets/item-amulet.png" alt="Защитный амулет" />
-        <div class="item-label">Защитный амулет</div>
-      </div>
-    </aside>
-
-    <!-- Directions panel -->
-    <div id="directions-panel" class="hidden">
-      <h3>Выберите направление:</h3>
-      <div class="directions-strip">
-        <div class="dir-card" data-direction="up">↑ Вперёд</div>
-        <div class="dir-card" data-direction="left">← Налево</div>
-        <div class="dir-card" data-direction="right">→ Направо</div>
-        <div class="dir-card" data-direction="down">↓ Назад</div>
-      </div>
-    </div>
-
-    <!-- Modal windows -->
-    <div id="modal" class="modal hidden">
-      <div class="modal-content">
-        <button id="modal-close">&times;</button>
-        <h2 id="modal-title">Заголовок</h2>
-        <div id="modal-body">
-          <p>Содержимое модального окна...</p>
-        </div>
-        <button id="modal-confirm" class="btn hidden">Понятно</button>
-      </div>
-    </div>
-
-    <!-- Combat panel -->
-    <div id="combat-panel" class="modal hidden">
-      <div class="modal-content combat">
-        <h2 id="combat-title">Столкновение с монстром!</h2>
-        <div id="combat-body">
-          <p>Сила противника: <span id="monster-power">10</span></p>
-          <p>Вам нужно выбросить <span id="required-power">10+</span></p>
-        </div>
-        <div class="combat-controls">
-          <button id="roll-dice" class="btn">Бросить 2D6</button>
-          <div id="dice-result" class="dice-result">—</div>
-        </div>
-        
-        <!-- Item usage during combat -->
-        <div id="item-choices" class="hidden">
-          <p>Использовать предмет:</p>
-          <button id="use-doll" class="btn item-btn">Куколка-оберег (переброс)</button>
-          <button id="use-sword-btn" class="btn item-btn">Меч-кладенец (+3 к броску)</button>
-          <button id="use-amulet-btn" class="btn item-btn">Амулет (сбежать)</button>
-        </div>
-        
-        <div id="weapon-choice" class="hidden">
-          <p>Выберите способ атаки:</p>
-          <button id="use-bare-hands" class="btn">Биться голыми руками</button>
-          <button id="use-sword" class="btn">Использовать меч</button>
-        </div>
-        
-        <div id="escape-panel" class="hidden">
-          <p>Используйте амулет, чтобы сбежать!</p>
-          <button id="use-amulet-escape" class="btn">Использовать амулет</button>
-        </div>
-        
-        <div id="reroll-panel" class="hidden">
-          <p>Куколка-оберег позволяет перебросить кубики!</p>
-          <button id="reroll-dice" class="btn">Перебросить кубики</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Current location info -->
-    <div id="location-info">
-      <div id="current-location" class="hidden">
-        <h3>Текущая локация</h3>
-        <div id="location-name">—</div>
-      </div>
-    </div>
-
-  </main>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
