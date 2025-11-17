@@ -465,3 +465,80 @@ html, body {
     padding: 8px 12px;
   }
 }
+/* Добавьте эти стили в конец файла style.css */
+
+/* Direction cards with images */
+.dir-card {
+    width: 100px;
+    height: 120px;
+    border-radius: 8px;
+    border: 3px solid var(--gold);
+    background: linear-gradient(135deg, #2f241b, #4a3628);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--accent);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.dir-card img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    margin-bottom: 8px;
+}
+
+.direction-label {
+    font-size: 12px;
+    text-align: center;
+    background: rgba(0,0,0,0.7);
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.dir-card:hover {
+    transform: scale(1.1);
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255,215,0,0.5);
+}
+
+.dir-card.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.dir-card.disabled:hover {
+    transform: none;
+    border-color: var(--gold);
+    box-shadow: none;
+}
+
+/* Card back for location cards */
+.card.back {
+    background: linear-gradient(45deg, #8B4513, #A0522D);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card.back img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+}
+
+/* Monster cards specific styles */
+.slot .card[src*="monster"] {
+    border-color: var(--danger);
+}
+
+.slot .card[src*="monster"]:hover {
+    box-shadow: 0 0 20px rgba(139, 0, 0, 0.5);
+}
