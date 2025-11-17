@@ -368,6 +368,16 @@ html, body {
   transform: none;
 }
 
+.item-btn {
+  background: #2E8B57;
+  font-size: 14px;
+  padding: 10px 15px;
+}
+
+.item-btn:hover {
+  background: #26734a;
+}
+
 /* Combat */
 .dice-result {
   font-size: 24px;
@@ -383,11 +393,18 @@ html, body {
   margin: 20px 0;
 }
 
-#weapon-choice, #escape-panel {
+#item-choices, #weapon-choice, #escape-panel, #reroll-panel {
   margin: 20px 0;
   padding: 15px;
   background: rgba(181, 139, 74, 0.1);
   border-radius: 8px;
+  border-left: 4px solid var(--gold);
+}
+
+#item-choices p, #weapon-choice p, #escape-panel p, #reroll-panel p {
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #333;
 }
 
 /* Location info */
@@ -441,5 +458,10 @@ html, body {
   .modal-content {
     margin: 20px;
     padding: 20px;
+  }
+  
+  .item-btn {
+    font-size: 12px;
+    padding: 8px 12px;
   }
 }
