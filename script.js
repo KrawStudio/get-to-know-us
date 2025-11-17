@@ -2,25 +2,25 @@
 const gameState = {
     phase: 'start',
     deckMoved: false,
-    currentLocation: 'start',
-    visitedLocations: new Set(['start']),
+    currentLocation: null,
+    visitedLocations: new Set(),
     inventory: {
-        amulet: true,
-        sword: false
+        doll: true,    // Куколка-оберег (начальный предмет)
+        sword: false,  // Меч-кладенец
+        amulet: false  // Защитный амулет
     },
     monstersDefeated: 0,
     currentMonsterPower: 0,
-    availableDirections: ['up', 'left', 'right', 'down'],
+    usedSword: false,
     locationSequence: [
         'start', 'about', 'monster1', 'purpose', 'monster2', 
         'cooperation', 'monster3', 'team'
     ],
-    currentLocationIndex: 0
+    currentLocationIndex: -1
 };
 
 // DOM elements
 const deck = document.getElementById('deck');
-const playArea = document.getElementById('play-area');
 const slots = {
     center: document.getElementById('center-slot'),
     top: document.getElementById('slot-top'),
@@ -29,8 +29,9 @@ const slots = {
     bottom: document.getElementById('slot-bottom')
 };
 const inventoryPanel = {
-    amulet: document.getElementById('amulet-card'),
-    sword: document.getElementById('sword-card')
+    doll: document.getElementById('doll-card'),
+    sword: document.getElementById('sword-card'),
+    amulet: document.getElementById('amulet-card')
 };
 const directionsPanel = document.getElementById('directions-panel');
 const modal = document.getElementById('modal');
@@ -43,7 +44,7 @@ const locationData = {
     start: {
         name: 'Стартовая локация',
         image: 'assets/start.png',
-        description: 'Солдат возвращается с русско-японской войны. Его сны становятся полем битвы с внутренними демонами...'
+        description: 'Солдат возвращается с русско-японской войны. Его сны становятся полем битвы с внутренними демонами... Вы получаете куколку-оберег для защиты в этом кошмарном путешествии.'
     },
     about: {
         name: 'Об игре',
@@ -127,16 +128,31 @@ const locationData = {
 };
 
 const monsterData = {
-    monster1: { power: 10, requiredRoll: { min: 1, max: 9 } },
-    monster2: { power: 11, requiredRoll: { bareHands: { min: 11, max: 12 }, sword: { min: 8, max: 10 } } },
-    monster3: { power: 12, requiredRoll: { withSword: { min: 1, max: 8 }, withoutSword: { min: 1, max: 11 } } }
+    monster1: { 
+        power: 10, 
+        requiredRoll: { min: 10, max: 12 },
+        failureRoll: { min: 1, max: 9 }
+    },
+    monster2: { 
+        power: 11, 
+        requiredRoll: { 
+            bareHands: { min: 11, max: 12 }, 
+            sword: { min: 8, max: 10 } 
+        }
+    },
+    monster3: { 
+        power: 12, 
+        requiredRoll: { 
+            withSword: { min: 1, max: 8 }, 
+            withoutSword: { min: 1, max: 11 } 
+        }
+    }
 };
 
 // Initialize game
 function initGame() {
     updateInventory();
     locationInfo.classList.remove('hidden');
-    updateLocationInfo();
     
     // Event listeners
     deck.addEventListener('click', handleDeckClick);
@@ -147,6 +163,7 @@ function initGame() {
     document.getElementById('use-sword').addEventListener('click', () => handleWeaponChoice(true));
     document.getElementById('use-amulet').addEventListener('click', useAmulet);
     
+    inventoryPanel.doll.addEventListener('click', useDollFromInventory);
     inventoryPanel.amulet.addEventListener('click', useAmuletFromInventory);
 }
 
@@ -155,9 +172,9 @@ function handleDeckClick() {
     if (!gameState.deckMoved) {
         // First click - move deck and reveal start
         moveDeckToCorner();
-        revealLocation('start');
+        revealNextLocation();
         gameState.deckMoved = true;
-    } else if (gameState.phase === 'start' || gameState.phase === 'location') {
+    } else if (gameState.phase === 'location') {
         // Deal 4 cards around current location
         dealLocationCards();
         gameState.phase = 'chooseDirection';
@@ -169,8 +186,11 @@ function moveDeckToCorner() {
     deck.classList.add('moved');
 }
 
-function revealLocation(locationKey) {
+function revealNextLocation() {
+    gameState.currentLocationIndex++;
+    const locationKey = gameState.locationSequence[gameState.currentLocationIndex];
     const location = locationData[locationKey];
+    
     if (!location) return;
 
     // Clear center slot
@@ -189,10 +209,14 @@ function revealLocation(locationKey) {
     gameState.visitedLocations.add(locationKey);
     updateLocationInfo();
     
-    // Auto-show info for story locations
-    if (['about', 'purpose', 'cooperation', 'team'].includes(locationKey)) {
+    // Handle different location types
+    if (locationKey.includes('monster')) {
+        startCombat(locationKey);
+    } else if (['about', 'purpose', 'cooperation', 'team'].includes(locationKey)) {
         showLocationInfo(locationKey);
     }
+    
+    gameState.phase = 'location';
 }
 
 function dealLocationCards() {
@@ -200,6 +224,7 @@ function dealLocationCards() {
     Object.values(slots).forEach(slot => {
         if (slot !== slots.center) {
             slot.classList.add('occupied');
+            slot.innerHTML = '<div class="card-back"></div>';
         }
     });
 }
@@ -207,15 +232,17 @@ function dealLocationCards() {
 function showDirectionsPanel() {
     directionsPanel.classList.remove('hidden');
     
-    // Update available directions (prevent going back to visited locations)
+    // Update available directions
     const directionCards = document.querySelectorAll('.dir-card');
+    const availableDirections = ['up', 'left', 'right', 'down'];
+    
     directionCards.forEach(card => {
         const direction = card.dataset.direction;
-        // Simple logic to prevent immediate backtracking
-        const isDisabled = gameState.visitedLocations.has(direction);
-        card.classList.toggle('disabled', isDisabled);
+        const isAvailable = availableDirections.includes(direction);
         
-        if (!isDisabled) {
+        card.classList.toggle('disabled', !isAvailable);
+        
+        if (isAvailable) {
             card.onclick = () => selectDirection(direction);
         } else {
             card.onclick = null;
@@ -225,17 +252,17 @@ function showDirectionsPanel() {
 
 function selectDirection(direction) {
     directionsPanel.classList.add('hidden');
-    
-    // Move to next location in sequence
-    gameState.currentLocationIndex++;
-    const nextLocation = gameState.locationSequence[gameState.currentLocationIndex];
-    
-    if (nextLocation.includes('monster')) {
-        startCombat(nextLocation);
-    } else {
-        revealLocation(nextLocation);
-        gameState.phase = 'location';
-    }
+    clearSlots();
+    revealNextLocation();
+}
+
+function clearSlots() {
+    Object.values(slots).forEach(slot => {
+        if (slot !== slots.center) {
+            slot.classList.remove('occupied');
+            slot.innerHTML = '';
+        }
+    });
 }
 
 function startCombat(monsterKey) {
@@ -247,15 +274,17 @@ function startCombat(monsterKey) {
     document.getElementById('required-power').textContent = monster.power + '+';
     document.getElementById('dice-result').textContent = '—';
     
-    // Show/hide weapon choice based on inventory
+    // Show/hide weapon choice based on inventory and monster
     const weaponChoice = document.getElementById('weapon-choice');
+    const escapePanel = document.getElementById('escape-panel');
+    
+    weaponChoice.classList.add('hidden');
+    escapePanel.classList.add('hidden');
+    
     if (monsterKey === 'monster2' && gameState.inventory.sword) {
         weaponChoice.classList.remove('hidden');
-    } else {
-        weaponChoice.classList.add('hidden');
     }
     
-    document.getElementById('escape-panel').classList.add('hidden');
     combatPanel.classList.remove('hidden');
 }
 
@@ -271,17 +300,20 @@ function rollDice() {
 }
 
 function checkCombatResult(total) {
-    const currentMonster = Object.keys(monsterData)[gameState.monstersDefeated];
-    const monster = monsterData[currentMonster];
+    const currentMonsterKey = gameState.locationSequence[gameState.currentLocationIndex];
+    const monster = monsterData[currentMonsterKey];
     
     let success = false;
+    let usedItem = null;
     
-    switch(currentMonster) {
+    switch(currentMonsterKey) {
         case 'monster1':
-            success = total >= 10;
-            if (!success) {
-                showMessage('Ой-ой. Кажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подерок. Попробуйте использовать его!');
-                highlightItem('amulet');
+            if (total >= monster.requiredRoll.min && total <= monster.requiredRoll.max) {
+                success = true;
+            } else if (total >= monster.failureRoll.min && total <= monster.failureRoll.max) {
+                // Failure case for monster1 - suggest using doll
+                showMessage('Ой-ой. Кажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!');
+                highlightItem('doll');
                 return;
             }
             break;
@@ -289,14 +321,16 @@ function checkCombatResult(total) {
         case 'monster2':
             if (gameState.usedSword) {
                 success = total >= monster.requiredRoll.sword.min && total <= monster.requiredRoll.sword.max;
+                usedItem = 'sword';
             } else {
-                success = total >= monster.requiredRoll.bareHands.min;
+                success = total >= monster.requiredRoll.bareHands.min && total <= monster.requiredRoll.bareHands.max;
             }
             break;
             
         case 'monster3':
             if (gameState.inventory.sword && gameState.usedSword) {
                 success = total >= monster.requiredRoll.withSword.min && total <= monster.requiredRoll.withSword.max;
+                usedItem = 'sword';
             } else {
                 success = total >= monster.requiredRoll.withoutSword.min && total <= monster.requiredRoll.withoutSword.max;
             }
@@ -304,7 +338,7 @@ function checkCombatResult(total) {
     }
     
     if (success) {
-        handleCombatVictory();
+        handleCombatVictory(usedItem);
     } else {
         handleCombatDefeat();
     }
@@ -316,40 +350,46 @@ function handleWeaponChoice(useSword) {
     rollDice();
 }
 
-function handleCombatVictory() {
+function handleCombatVictory(usedItem) {
     gameState.monstersDefeated++;
     
     let message = '';
+    let itemChange = null;
+    
     switch(gameState.monstersDefeated) {
         case 1:
             message = 'Другое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации "Получить оружие".';
-            gameState.inventory.amulet = false;
-            gameState.inventory.sword = true;
-            updateInventory();
+            itemChange = { remove: 'doll', add: 'sword' };
             break;
         case 2:
-            if (gameState.usedSword) {
+            if (usedItem === 'sword') {
                 message = 'Всегда важно грамотно рассчитать силы. Хорошо, что у вас в ножнах оказалось такое оружие! И вновь применяем эффект карты локации – за победу над монстром получите предмет.';
-                gameState.inventory.sword = false;
-                gameState.inventory.amulet = true;
+                itemChange = { remove: 'sword', add: 'amulet' };
             } else {
                 message = 'Вау! Да вы опытный боец! Поспешим в путь! И вновь применяем эффект карты локации – за победу над монстром получите предмет. Хотя, наверное, такому силачу уже никакие предметы не нужны';
-                gameState.inventory.amulet = true;
+                itemChange = { add: 'amulet' };
             }
-            updateInventory();
             break;
+        case 3:
+            message = 'Потрясающе! Вы победили всех монстров! Герой находит душевный покой...';
+            break;
+    }
+    
+    // Apply item changes
+    if (itemChange) {
+        if (itemChange.remove) {
+            gameState.inventory[itemChange.remove] = false;
+        }
+        if (itemChange.add) {
+            gameState.inventory[itemChange.add] = true;
+        }
+        updateInventory();
     }
     
     showMessage(message);
     combatPanel.classList.add('hidden');
     gameState.phase = 'location';
-    
-    // Continue to next location
-    setTimeout(() => {
-        gameState.currentLocationIndex++;
-        const nextLocation = gameState.locationSequence[gameState.currentLocationIndex];
-        revealLocation(nextLocation);
-    }, 2000);
+    gameState.usedSword = false;
 }
 
 function handleCombatDefeat() {
@@ -357,6 +397,29 @@ function handleCombatDefeat() {
         showMessage('Ничего страшного! Каждый имеет право на маленькие неудачи. Иначе было бы не так захватывающе, верно? Используйте амулет, чтобы поскорее выбраться из этой скользкой ситуации');
         document.getElementById('escape-panel').classList.remove('hidden');
         highlightItem('amulet');
+    } else {
+        showMessage('Неудача! Попробуйте снова или используйте предмет для помощи.');
+        // Allow retry
+        document.getElementById('dice-result').textContent = '—';
+    }
+}
+
+function useDollFromInventory() {
+    if (gameState.phase === 'combat' && gameState.monstersDefeated === 0) {
+        // Reroll with doll bonus
+        const dice1 = Math.floor(Math.random() * 6) + 1;
+        const dice2 = Math.floor(Math.random() * 6) + 1;
+        const total = dice1 + dice2 + 2; // Doll gives +2 bonus
+        
+        document.getElementById('dice-result').textContent = `${dice1} + ${dice2} + 2 (амулет) = ${total}`;
+        
+        setTimeout(() => {
+            if (total >= 10) {
+                gameState.inventory.doll = false;
+                updateInventory();
+                handleCombatVictory();
+            }
+        }, 1000);
     }
 }
 
@@ -366,11 +429,9 @@ function useAmulet() {
     gameState.inventory.amulet = false;
     updateInventory();
     
-    // Continue game
+    // Continue game (escape from combat)
     gameState.phase = 'location';
-    gameState.currentLocationIndex++;
-    const nextLocation = gameState.locationSequence[gameState.currentLocationIndex];
-    revealLocation(nextLocation);
+    revealNextLocation();
 }
 
 function useAmuletFromInventory() {
@@ -381,6 +442,10 @@ function useAmuletFromInventory() {
 
 function highlightItem(itemType) {
     inventoryPanel[itemType].classList.add('highlight');
+    // Remove highlight after 3 seconds
+    setTimeout(() => {
+        inventoryPanel[itemType].classList.remove('highlight');
+    }, 3000);
 }
 
 function showLocationInfo(locationKey) {
@@ -401,21 +466,6 @@ function showMessage(message) {
 }
 
 function updateInventory() {
-    inventoryPanel.amulet.classList.toggle('hidden', !gameState.inventory.amulet);
+    inventoryPanel.doll.classList.toggle('hidden', !gameState.inventory.doll);
     inventoryPanel.sword.classList.toggle('hidden', !gameState.inventory.sword);
-}
-
-function updateLocationInfo() {
-    const location = locationData[gameState.currentLocation];
-    if (location) {
-        locationName.textContent = location.name;
-    }
-}
-
-// Utility functions
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Initialize game when loaded
-document.addEventListener('DOMContentLoaded', initGame);
+    inventoryPanel.amulet.classList.toggle('hidden', !gameState.inventory.amulet
