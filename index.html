@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Сон Журавля — настольная карточная игра (демо)</title>
+  <title>Сон Журавля — настольная карточная игра</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="board">
     <h1 class="title">СОН ЖУРАВЛЯ</h1>
-    <p class="subtitle">узнайте нас лучше</p>
+    <p class="subtitle">русско-японская мифология в настольной игре</p>
 
     <!-- Deck (колода) -->
     <div id="deck" class="card back" title="Нажмите, чтобы выложить стартовую локацию">
-      <img src="assets/back.png" alt="Deck" />
+      <img src="assets/back.png" alt="Колода карт" />
     </div>
 
-    <!-- Start card target (center) -->
+    <!-- Play area -->
     <div id="play-area">
       <div id="center-slot" class="slot"></div>
       <div id="slot-top" class="slot"></div>
@@ -25,36 +25,70 @@
       <div id="slot-bottom" class="slot"></div>
     </div>
 
-    <!-- Side item card panel -->
-    <aside id="item-panel" class="hidden">
-      <div id="item-card" class="card item">
-        <img src="assets/item-amulet.png" alt="Куколька-оберег" />
-        <div class="item-label">Куколька-оберег</div>
+    <!-- Inventory panel -->
+    <aside id="inventory-panel">
+      <div id="amulet-card" class="inventory-card hidden" data-type="amulet">
+        <img src="assets/item-amulet.png" alt="Куколка-оберег" />
+        <div class="item-label">Куколка-оберег</div>
+      </div>
+      <div id="sword-card" class="inventory-card hidden" data-type="sword">
+        <img src="assets/item-sword.png" alt="Меч-кладенец" />
+        <div class="item-label">Меч-кладенец</div>
       </div>
     </aside>
 
-    <!-- Direction cards strip -->
-    <div id="directions" class="hidden">
-      <div class="dir-card" data-index="0"><img src="assets/dir1.png" alt="Направление 1" /></div>
-      <div class="dir-card" data-index="1"><img src="assets/dir2.png" alt="Направление 2" /></div>
-      <div class="dir-card" data-index="2"><img src="assets/dir3.png" alt="Направление 3" /></div>
-      <div class="dir-card" data-index="3"><img src="assets/dir4.png" alt="Направление 4" /></div>
-    </div>
-
-    <!-- Modal / info panel -->
-    <div id="modal" class="hidden">
-      <div class="modal-inner">
-        <button id="modal-close">&times;</button>
-        <h2 id="modal-title">Заголовок</h2>
-        <div id="modal-body">Содержимое карты...</div>
+    <!-- Directions panel -->
+    <div id="directions-panel" class="hidden">
+      <h3>Выберите направление:</h3>
+      <div class="directions-strip">
+        <div class="dir-card" data-direction="up">↑ Вперёд</div>
+        <div class="dir-card" data-direction="left">← Налево</div>
+        <div class="dir-card" data-direction="right">→ Направо</div>
+        <div class="dir-card" data-direction="down">↓ Назад</div>
       </div>
     </div>
 
-    <!-- Dice area for monsters -->
-    <div id="dice-panel" class="hidden">
-      <div class="dice-controls">
-        <button id="roll-dice">Бросить 2D6</button>
-        <div id="dice-result">—</div>
+    <!-- Modal windows -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <button id="modal-close">&times;</button>
+        <h2 id="modal-title">Заголовок</h2>
+        <div id="modal-body">
+          <p>Содержимое модального окна...</p>
+        </div>
+        <button id="modal-confirm" class="btn hidden">Понятно</button>
+      </div>
+    </div>
+
+    <!-- Combat panel -->
+    <div id="combat-panel" class="modal hidden">
+      <div class="modal-content combat">
+        <h2 id="combat-title">Столкновение с монстром!</h2>
+        <div id="combat-body">
+          <p>Сила противника: <span id="monster-power">10</span></p>
+          <p>Вам нужно выбросить <span id="required-power">10+</span></p>
+        </div>
+        <div class="combat-controls">
+          <button id="roll-dice" class="btn">Бросить 2D6</button>
+          <div id="dice-result" class="dice-result">—</div>
+        </div>
+        <div id="weapon-choice" class="hidden">
+          <p>Выберите способ атаки:</p>
+          <button id="use-bare-hands" class="btn">Биться голыми руками</button>
+          <button id="use-sword" class="btn">Испытать новый меч</button>
+        </div>
+        <div id="escape-panel" class="hidden">
+          <p>Используйте амулет, чтобы сбежать!</p>
+          <button id="use-amulet" class="btn">Использовать амулет</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current location info -->
+    <div id="location-info">
+      <div id="current-location" class="hidden">
+        <h3>Текущая локация</h3>
+        <div id="location-name">—</div>
       </div>
     </div>
 
