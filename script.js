@@ -468,4 +468,15 @@ function showMessage(message) {
 function updateInventory() {
     inventoryPanel.doll.classList.toggle('hidden', !gameState.inventory.doll);
     inventoryPanel.sword.classList.toggle('hidden', !gameState.inventory.sword);
-    inventoryPanel.amulet.classList.toggle('hidden', !gameState.inventory.amulet
+    inventoryPanel.amulet.classList.toggle('hidden', !gameState.inventory.amulet);
+}
+
+function updateLocationInfo() {
+    const location = locationData[gameState.currentLocation];
+    if (location) {
+        locationName.textContent = location.name;
+    }
+}
+
+// Initialize game when loaded
+document.addEventListener('DOMContentLoaded', initGame);
