@@ -1,544 +1,408 @@
-:root {
-  --bg: #1a1a2e;
-  --wood: url('assets/wood.jpg');
-  --card-w: 180px;
-  --card-h: 240px;
-  --accent: #f0ead6;
-  --gold: #b58b4a;
-  --danger: #8B0000;
-  --success: #2E8B57;
-}
-
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html, body {
-  height: 100%;
-  font-family: "Segoe UI", Roboto, "Times New Roman", serif;
-  background: var(--bg);
-  color: var(--accent);
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: #1a1200 url('assets/wood.jpg') center/cover;
+    color: #f0e6d2;
+    overflow: hidden;
+    height: 100vh;
 }
 
-.board {
-  min-height: 100vh;
-  background-image: var(--wood);
-  background-size: cover;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Typography */
-.title {
-  font-family: 'Times New Roman', serif;
-  font-size: 48px;
-  text-align: center;
-  margin: 10px 0 5px;
-  color: var(--accent);
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-}
-
-.subtitle {
-  text-align: center;
-  font-size: 18px;
-  opacity: 0.9;
-  margin-bottom: 20px;
-}
-
-/* Deck */
-#deck {
-  position: absolute;
-  right: 10%;
-  top: 50%;
-  width: 120px;
-  height: 160px;
-  transform: translateY(-50%);
-  cursor: pointer;
-  transition: all 0.6s ease;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-  border-radius: 8px;
-  border: 4px solid var(--gold);
-  background: #111;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#deck img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-#deck.moved {
-  left: 30px;
-  top: calc(100% - 200px);
-  right: auto;
-  transform: none;
-}
-
-/* Play area */
-#play-area {
-  width: 100%;
-  height: 60vh;
-  position: relative;
-  margin-top: 20px;
-}
-
-.slot {
-  width: var(--card-w);
-  height: var(--card-h);
-  position: absolute;
-  border-radius: 8px;
-  border: 3px solid transparent;
-  background: transparent;
-  transition: all 0.5s ease;
-  opacity: 0;
-  visibility: hidden;
-}
-
-#center-slot {
-  left: 50%;
-  top: 40%;
-  transform: translate(-50%, -50%);
-}
-
-#slot-top {
-  left: 50%;
-  top: 15%;
-  transform: translate(-50%, -50%);
-}
-
-#slot-left {
-  left: 30%;
-  top: 40%;
-  transform: translate(-50%, -50%);
-}
-
-#slot-right {
-  left: 70%;
-  top: 40%;
-  transform: translate(-50%, -50%);
-}
-
-#slot-bottom {
-  left: 50%;
-  top: 65%;
-  transform: translate(-50%, -50%);
-}
-
-.slot.occupied {
-  opacity: 1;
-  visibility: visible;
-  border-color: var(--gold);
-  background: rgba(181, 139, 74, 0.1);
-}
-
-.slot .card {
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
-  border: 2px solid var(--gold);
-  background: white;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.slot .card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-}
-
-.slot .card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Inventory */
-#inventory-panel {
-  position: absolute;
-  right: 20px;
-  top: 120px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.inventory-card {
-  width: 100px;
-  border-radius: 6px;
-  border: 3px solid var(--gold);
-  background: white;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.inventory-card:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-}
-
-.inventory-card.highlight {
-  border-color: #ffd700;
-  box-shadow: 0 0 20px #ffd700;
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.inventory-card img {
-  width: 100%;
-  height: 80px;
-  object-fit: cover;
-  display: block;
-}
-
-.item-label {
-  text-align: center;
-  padding: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--gold);
-  color: white;
-}
-
-/* Directions */
-#directions-panel {
-  position: fixed;
-  left: 50%;
-  bottom: 30px;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.8);
-  padding: 20px;
-  border-radius: 10px;
-  border: 2px solid var(--gold);
-  z-index: 100;
-}
-
-#directions-panel h3 {
-  text-align: center;
-  margin-bottom: 15px;
-  color: var(--accent);
-}
-
-.directions-strip {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-}
-
-.dir-card {
-  width: 80px;
-  height: 100px;
-  border-radius: 6px;
-  border: 3px solid var(--gold);
-  background: linear-gradient(135deg, #2f241b, #4a3628);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: bold;
-  color: var(--accent);
-  transition: all 0.3s ease;
-}
-
-.dir-card:hover {
-  transform: scale(1.1);
-  border-color: #ffd700;
-  box-shadow: 0 0 15px rgba(255,215,0,0.5);
-}
-
-.dir-card.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.dir-card.disabled:hover {
-  transform: none;
-  border-color: var(--gold);
-  box-shadow: none;
-}
-
-/* Modals */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal.hidden {
-  display: none;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  max-width: 600px;
-  max-height: 80vh;
-  overflow-y: auto;
-  color: #333;
-  position: relative;
-  border: 4px solid var(--gold);
-}
-
-.modal-content.combat {
-  background: linear-gradient(135deg, #fff, #f0f0f0);
-  text-align: center;
-}
-
-#modal-close {
-  position: absolute;
-  right: 15px;
-  top: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-}
-
-#modal-close:hover {
-  color: #000;
-}
-
-#modal-title {
-  color: var(--bg);
-  margin-bottom: 20px;
-  text-align: center;
-  font-size: 28px;
-}
-
-#modal-body {
-  line-height: 1.6;
-  margin-bottom: 20px;
-}
-
-#modal-body h3 {
-  color: var(--bg);
-  margin: 20px 0 10px;
-}
-
-#modal-body ul {
-  margin-left: 20px;
-  margin-bottom: 15px;
-}
-
-/* Buttons */
-.btn {
-  background: var(--gold);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  margin: 5px;
-  transition: all 0.3s ease;
-}
-
-.btn:hover {
-  background: #a07840;
-  transform: translateY(-2px);
-}
-
-.btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.item-btn {
-  background: #2E8B57;
-  font-size: 14px;
-  padding: 10px 15px;
-}
-
-.item-btn:hover {
-  background: #26734a;
-}
-
-/* Combat */
-.dice-result {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 15px 0;
-  padding: 10px;
-  border-radius: 8px;
-  background: #f8f8f8;
-  border: 2px solid #ddd;
-}
-
-.combat-controls {
-  margin: 20px 0;
-}
-
-#item-choices, #weapon-choice, #escape-panel, #reroll-panel {
-  margin: 20px 0;
-  padding: 15px;
-  background: rgba(181, 139, 74, 0.1);
-  border-radius: 8px;
-  border-left: 4px solid var(--gold);
-}
-
-#item-choices p, #weapon-choice p, #escape-panel p, #reroll-panel p {
-  margin-bottom: 10px;
-  font-weight: bold;
-  color: #333;
-}
-
-/* Location info */
-#location-info {
-  position: absolute;
-  left: 20px;
-  top: 120px;
-  background: rgba(0,0,0,0.7);
-  padding: 15px;
-  border-radius: 8px;
-  border: 2px solid var(--gold);
-}
-
-#current-location h3 {
-  margin-bottom: 10px;
-  color: var(--accent);
-}
-
-#location-name {
-  font-weight: bold;
-  font-size: 18px;
-  color: var(--gold);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .title {
-    font-size: 32px;
-  }
-  
-  :root {
-    --card-w: 120px;
-    --card-h: 160px;
-  }
-  
-  #deck {
-    width: 80px;
-    height: 120px;
-  }
-  
-  .inventory-card {
-    width: 70px;
-  }
-  
-  .dir-card {
-    width: 60px;
-    height: 80px;
-    font-size: 14px;
-  }
-  
-  .modal-content {
-    margin: 20px;
+.game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
     padding: 20px;
-  }
-  
-  .item-btn {
-    font-size: 12px;
-    padding: 8px 12px;
-  }
 }
-/* Добавьте эти стили в конец файла style.css */
 
-/* Direction cards with images */
-.dir-card {
-    width: 100px;
-    height: 120px;
-    border-radius: 8px;
-    border: 3px solid var(--gold);
-    background: linear-gradient(135deg, #2f241b, #4a3628);
-    display: flex;
-    flex-direction: column;
+/* Заголовок */
+.game-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.game-header h1 {
+    font-size: 3rem;
+    color: #d4af37;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    margin-bottom: 5px;
+}
+
+.game-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+/* Игровое поле */
+.game-board {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 20px;
     align-items: center;
-    justify-content: center;
+    justify-items: center;
+}
+
+/* Карты локаций */
+.location-card {
+    width: 140px;
+    height: 140px;
+    border-radius: 12px;
+    border: 3px solid #d4af37;
+    background: #fff;
     cursor: pointer;
-    font-weight: bold;
-    color: var(--accent);
     transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     overflow: hidden;
     position: relative;
 }
 
-.dir-card img {
-    width: 60px;
-    height: 60px;
-    object-fit: contain;
-    margin-bottom: 8px;
+.location-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
 }
 
-.direction-label {
-    font-size: 12px;
-    text-align: center;
-    background: rgba(0,0,0,0.7);
-    padding: 4px 8px;
-    border-radius: 4px;
+.location-card img {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.dir-card:hover {
+.location-card.back {
+    background: linear-gradient(135deg, #8B4513, #A0522D);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.location-card.back img {
+    width: 80%;
+    height: 80%;
+    opacity: 0.8;
+}
+
+/* Позиции карт */
+.location-card[data-position="center"] {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.location-card[data-position="top"] {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.location-card[data-position="left"] {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.location-card[data-position="right"] {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.location-card[data-position="bottom"] {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+/* Колода */
+.deck {
+    position: absolute;
+    right: 10%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 140px;
+    height: 140px;
+    cursor: pointer;
+    transition: all 0.6s ease;
+    border-radius: 12px;
+    border: 3px solid #d4af37;
+    background: #2c1f08;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+}
+
+.deck.moved {
+    left: 30px;
+    top: auto;
+    bottom: 30px;
+    right: auto;
+    transform: none;
+}
+
+.deck img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 9px;
+}
+
+/* Панель предметов */
+.inventory-panel {
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: all 0.5s ease;
+}
+
+.inventory-panel.hidden {
+    transform: translateY(-50%) translateX(100px);
+    opacity: 0.3;
+}
+
+.inventory-card {
+    width: 100px;
+    height: 120px;
+    border-radius: 8px;
+    border: 2px solid #d4af37;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.inventory-card:hover {
+    transform: scale(1.15);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
+}
+
+.inventory-card.highlight {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px #ffd700;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.inventory-card img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+}
+
+.inventory-card span {
+    text-align: center;
+    padding: 5px;
+    font-size: 11px;
+    font-weight: bold;
+    background: #d4af37;
+    color: #1a1200;
+}
+
+/* Панель направлений */
+.directions-panel {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26, 18, 0, 0.9);
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #d4af37;
+    z-index: 100;
+}
+
+.directions-panel h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #f0e6d2;
+}
+
+.directions-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.direction-card {
+    width: 100px;
+    height: 120px;
+    border-radius: 8px;
+    border: 2px solid #d4af37;
+    background: linear-gradient(135deg, #2c1f08, #3d2c0f);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.direction-card:hover {
     transform: scale(1.1);
     border-color: #ffd700;
-    box-shadow: 0 0 15px rgba(255,215,0,0.5);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }
 
-.dir-card.disabled {
+.direction-card.disabled {
     opacity: 0.4;
     cursor: not-allowed;
     transform: none;
 }
 
-.dir-card.disabled:hover {
+.direction-card.disabled:hover {
     transform: none;
-    border-color: var(--gold);
+    border-color: #d4af37;
     box-shadow: none;
 }
 
-/* Card back for location cards */
-.card.back {
-    background: linear-gradient(45deg, #8B4513, #A0522D);
+.direction-card img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin-bottom: 8px;
+}
+
+.direction-card span {
+    font-size: 12px;
+    font-weight: bold;
+    color: #f0e6d2;
+}
+
+/* Модальные окна */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1000;
 }
 
-.card.back img {
-    width: 80%;
-    height: 80%;
-    object-fit: contain;
+.modal-content {
+    background: #f0e6d2;
+    color: #1a1200;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    border: 3px solid #d4af37;
 }
 
-/* Monster cards specific styles */
-.slot .card[src*="monster"] {
-    border-color: var(--danger);
+.modal-content.combat {
+    text-align: center;
 }
 
-.slot .card[src*="monster"]:hover {
-    box-shadow: 0 0 20px rgba(139, 0, 0, 0.5);
+.close {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+}
+
+.close:hover {
+    color: #000;
+}
+
+/* Кнопки */
+.btn {
+    background: #d4af37;
+    color: #1a1200;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 10px 5px;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    background: #b8941f;
+    transform: translateY(-2px);
+}
+
+.item-btn {
+    background: #2E8B57;
+    font-size: 14px;
+}
+
+.item-btn:hover {
+    background: #26734a;
+}
+
+/* Боевая система */
+.combat-info {
+    margin: 20px 0;
+    font-size: 18px;
+}
+
+.dice-container {
+    margin: 20px 0;
+}
+
+.dice-result {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 15px 0;
+    padding: 10px;
+    background: #fff;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}
+
+.combat-choices, .weapon-choice {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .game-header h1 {
+        font-size: 2rem;
+    }
+    
+    .game-board {
+        width: 400px;
+        height: 400px;
+    }
+    
+    .location-card, .deck {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .inventory-card, .direction-card {
+        width: 80px;
+        height: 100px;
+    }
+    
+    .modal-content {
+        margin: 20px;
+        padding: 20px;
+    }
 }
