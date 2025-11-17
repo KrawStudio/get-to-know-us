@@ -1,0 +1,115 @@
+:root{
+  --bg: #2f241b;
+  --wood: url('assets/wood.jpg');
+  --card-w: 180px;
+  --card-h: 240px;
+  --accent: #f0ead6;
+  --gold: #b58b4a;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family: "Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);color:var(--accent)}
+.board{
+  min-height:100vh;
+  background-image: var(--wood);
+  background-size:cover;
+  padding:28px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Title */
+.title{font-family: 'Georgia', serif; font-size:64px; text-align:center;margin:6px 0 0;color:var(--accent)}
+.subtitle{text-align:center;margin-top:6px;font-size:28px;opacity:0.95}
+
+/* Deck */
+#deck{
+  position:absolute;
+  right:12%;
+  top:50%;
+  width:120px;height:160px;
+  transform:translateY(-50%);
+  cursor:pointer;
+  transition: transform .6s ease, left .6s ease, top .6s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,.5);
+  border-radius:8px;
+  border:6px solid rgba(181,139,74,.85);
+  background:#111;
+  display:flex;align-items:center;justify-content:center;
+}
+#deck img{width:100%;height:100%;object-fit:cover;border-radius:4px}
+
+/* When deck is moved to bottom-left */
+#deck.moved{
+  left:36px;
+  top: calc(100% - 220px);
+  right:auto;
+  transform:none;
+}
+
+/* Play area center and slots */
+#play-area{width:100%;height:70vh;position:relative;margin-top:20px}
+.slot{
+  width:var(--card-w);height:var(--card-h);
+  position:absolute;
+  left:50%;top:40%;
+  transform:translate(-50%,-50%);
+  border-radius:6px;
+  border:6px solid rgba(181,139,74,.85);
+  background:linear-gradient(#fff,#ddd);
+  box-shadow:0 6px 20px rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  transition:transform .5s ease, opacity .4s;
+  opacity:0;
+  visibility:hidden;
+}
+#center-slot{left:50%;top:40%}
+#slot-top{left:50%; top:10%}
+#slot-left{left:20%; top:40%}
+#slot-right{left:80%; top:40%}
+#slot-bottom{left:50%; top:70%}
+
+/* show slot */
+.slot.visible{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+
+/* item panel (sidebar) */
+#item-panel{
+  position:absolute; right:5%; top:30%;
+  width:160px; transition:transform .5s ease, opacity .4s;
+}
+#item-panel.hidden{opacity:0;transform:translateX(20px);pointer-events:none}
+#item-card{width:100%;border-radius:6px;border:6px solid rgba(181,139,74,.85);background:#fff;overflow:hidden}
+#item-card img{width:100%;height:180px;object-fit:cover;display:block}
+.item-label{text-align:center;padding:8px 6px;font-weight:600}
+
+/* directions strip bottom */
+#directions{
+  position:fixed; left:50%; bottom:30px; transform:translateX(-50%); display:flex;gap:12px; z-index:30;
+}
+.dir-card{width:120px;height:160px;border-radius:6px;border:5px solid rgba(181,139,74,.85);overflow:hidden;cursor:pointer;transform:scale(.95);transition:transform .18s ease, box-shadow .18s}
+.dir-card img{width:100%;height:100%;object-fit:cover;display:block}
+.dir-card:hover{transform:scale(1.08);box-shadow:0 8px 22px rgba(0,0,0,.5)}
+
+/* Hover enlarge for item card */
+#item-card:hover{transform:scale(1.06);box-shadow:0 12px 30px rgba(0,0,0,.6)}
+
+/* modal */
+#modal{
+  position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:80;
+}
+#modal.hidden{display:none}
+.modal-inner{background:#fff;padding:22px;border-radius:10px;max-width:720px;color:#111;position:relative}
+#modal-close{position:absolute;right:8px;top:8px;background:none;border:0;font-size:24px;cursor:pointer}
+
+/* dice */
+#dice-panel{position:fixed;right:28px;bottom:28px;background:rgba(255,255,255,.95);padding:14px;border-radius:8px;z-index:90}
+#dice-panel.hidden{display:none}
+#dice-result{font-size:20px;margin-top:8px}
+
+/* small screens */
+@media (max-width:720px){
+  .title{font-size:36px}
+  :root{--card-w:120px;--card-h:170px}
+  #deck{width:100px;height:140px}
+  .dir-card{width:90px;height:130px}
+}
