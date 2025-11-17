@@ -76,14 +76,29 @@
           <button id="roll-dice" class="btn">Бросить 2D6</button>
           <div id="dice-result" class="dice-result">—</div>
         </div>
+        
+        <!-- Item usage during combat -->
+        <div id="item-choices" class="hidden">
+          <p>Использовать предмет:</p>
+          <button id="use-doll" class="btn item-btn">Куколка-оберег (переброс)</button>
+          <button id="use-sword-btn" class="btn item-btn">Меч-кладенец (+3 к броску)</button>
+          <button id="use-amulet-btn" class="btn item-btn">Амулет (сбежать)</button>
+        </div>
+        
         <div id="weapon-choice" class="hidden">
           <p>Выберите способ атаки:</p>
           <button id="use-bare-hands" class="btn">Биться голыми руками</button>
-          <button id="use-sword" class="btn">Испытать новый меч</button>
+          <button id="use-sword" class="btn">Использовать меч</button>
         </div>
+        
         <div id="escape-panel" class="hidden">
           <p>Используйте амулет, чтобы сбежать!</p>
-          <button id="use-amulet" class="btn">Использовать амулет</button>
+          <button id="use-amulet-escape" class="btn">Использовать амулет</button>
+        </div>
+        
+        <div id="reroll-panel" class="hidden">
+          <p>Куколка-оберег позволяет перебросить кубики!</p>
+          <button id="reroll-dice" class="btn">Перебросить кубики</button>
         </div>
       </div>
     </div>
