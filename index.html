@@ -70,6 +70,7 @@
         .location-card {
             width: 220px;
             height: 220px;
+            transform-origin: center;
         }
         
         .item-card, .direction-card {
@@ -77,21 +78,19 @@
             height: 220px;
         }
         
-        /* Колода теперь квадратная */
+        /* Колода в левом нижнем углу */
         .deck {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 220px; /* Изменено на квадратную */
-            height: 220px; /* Изменено на квадратную */
+            left: 20px;
+            bottom: 20px;
+            width: 220px;
+            height: 220px;
             background-image: url('assets/back.png');
             background-size: cover;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
             cursor: pointer;
             z-index: 5;
-            transition: all 0.8s ease;
         }
         
         /* Подсказки */
@@ -109,10 +108,20 @@
             white-space: pre-line;
         }
         
+        .hint-close {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #fff;
+        }
+        
         .hint-right {
-            right: 30px;
-            top: 50%;
-            transform: translateY(-50%);
+            left: 250px; /* 20px (отступ колоды) + 220px (ширина колоды) + 10px (доп. отступ) */
+            bottom: 20px;
+            top: auto;
+            transform: none;
         }
         
         .hint-bottom {
@@ -135,6 +144,9 @@
             font-size: 18px;
             z-index: 10;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
         }
         
         /* Модальное окно */
@@ -258,12 +270,12 @@
         
         /* Скрытые карты */
         .hidden-card {
-            transform: translateX(80%) rotate(90deg);
+            transform: translateX(80%) rotate(-90deg);
             transition: transform 0.5s ease;
         }
         
         .hidden-card:hover {
-            transform: translateX(60%) rotate(90deg);
+            transform: translateX(60%) rotate(-90deg);
         }
         
         .hidden-direction {
@@ -285,31 +297,16 @@
             animation: fadeIn 0.8s ease;
         }
         
-        /* Контейнер для карт локаций */
-        .location-grid {
-            position: absolute;
+        /* Стиль для карточки куколки */
+        #item-doll {
+            transform: rotate(-90deg) translateX(80%);
+            transition: transform 0.5s ease;
+            right: 0;
             top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 20px;
         }
         
-        .grid-cell {
-            width: 220px;
-            height: 220px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        /* Сетка для отслеживания позиций */
-        .location-cell {
-            width: 220px;
-            height: 220px;
-            position: relative;
+        #item-doll:hover {
+            transform: rotate(-90deg) translateX(60%);
         }
     </style>
 </head>
@@ -325,8 +322,14 @@
         <div class="deck" id="deck"></div>
         
         <!-- Подсказки -->
-        <div class="hint hint-right" id="hint-right">&lt;&lt;&lt; Выложить стартовую локацию</div>
-        <div class="hint hint-bottom" id="hint-bottom" style="display: none;"></div>
+        <div class="hint hint-right" id="hint-right" style="display: none;">
+            <span class="hint-close" onclick="closeHint('hint-right')">×</span>
+            Доступные действия:\n&lt;&lt;&lt; Выложить новые карты локаций
+        </div>
+        <div class="hint hint-bottom" id="hint-bottom" style="display: none;">
+            <span class="hint-close" onclick="closeHint('hint-bottom')">×</span>
+            Доступные действия: Выбрать направление\n<span style="line-height: 0.5;">V\nV</span>
+        </div>
         
         <!-- Трекер локации -->
         <div class="location-tracker" id="location-tracker" style="display: none;"></div>
@@ -345,9 +348,6 @@
         
         <!-- Кнопки сражения -->
         <div class="battle-buttons" id="battle-buttons" style="display: none;"></div>
-        
-        <!-- Контейнер для карт локаций -->
-        <div class="location-grid" id="location-grid"></div>
     </div>
 
     <script>
@@ -366,7 +366,9 @@
                 '-1,0': null,  '0,0': null,  '1,0': null,
                 '-1,1': null,  '0,1': null,  '1,1': null
             },
-            currentPosition: { x: 0, y: 0 }
+            currentPosition: { x: 0, y: 0 },
+            locationHistory: [], // История посещенных локаций
+            cardScale: 1.0 // Масштаб карт
         };
 
         // DOM элементы
@@ -381,7 +383,6 @@
         const rollResult = document.getElementById('roll-result');
         const battleButtons = document.getElementById('battle-buttons');
         const titleContainer = document.querySelector('.title-container');
-        const locationGrid = document.getElementById('location-grid');
 
         // Обработчик клика на колоду
         deck.addEventListener('click', handleDeckClick);
@@ -389,10 +390,40 @@
         // Обработчик закрытия модального окна
         modalClose.addEventListener('click', () => {
             modal.classList.remove('active');
+            // После закрытия модального окна показываем подсказку справа
+            showHintRight();
         });
+
+        // Функция закрытия подсказки
+        function closeHint(hintId) {
+            document.getElementById(hintId).style.display = 'none';
+        }
+
+        // Показать подсказку справа
+        function showHintRight() {
+            hintRight.style.display = 'block';
+        }
+
+        // Скрыть подсказку справа
+        function hideHintRight() {
+            hintRight.style.display = 'none';
+        }
+
+        // Показать подсказку снизу
+        function showHintBottom() {
+            hintBottom.style.display = 'block';
+        }
+
+        // Скрыть подсказку снизу
+        function hideHintBottom() {
+            hintBottom.style.display = 'none';
+        }
 
         // Функция обработки клика на колоду
         function handleDeckClick() {
+            // Скрываем подсказку справа при нажатии на колоду
+            hideHintRight();
+
             switch(gameState.phase) {
                 case 'start':
                     startGame();
@@ -423,10 +454,7 @@
 
         // Начало игры
         function startGame() {
-            // Перемещаем колоду
-            deck.style.left = '10%';
-            deck.style.top = '80%';
-            deck.style.transform = 'translate(0, 0)';
+            // Перемещаем колоду в левый нижний угол (уже в стилях)
             
             // Обновляем заголовки
             setTimeout(() => {
@@ -463,14 +491,16 @@
                 }, 500);
                 
                 // Обновляем подсказки
-                hintRight.innerHTML = 'Доступные действия:\n&lt;&lt;&lt; Выложить новые карты локаций';
+                showHintRight();
                 hintBottom.style.display = 'block';
-                hintBottom.innerHTML = 'Эффект: начать игру на знакомство\nПолученные предметы: куколка-оберег';
+                hintBottom.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-bottom\')">×</span>Эффект: начать игру на знакомство\nПолученные предметы: куколка-оберег';
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
                 gameState.locationGrid['0,0'] = 'start';
-                updateLocationTracker('Стартовая локация');
+                // Добавляем в историю
+                gameState.locationHistory.push('Стартовая локация');
+                updateLocationTracker();
             }, 300);
         }
 
@@ -479,11 +509,21 @@
             const itemCard = document.createElement('div');
             itemCard.className = 'card item-card fade-in';
             itemCard.style.backgroundImage = `url("assets/item-${itemType}.png")`;
-            itemCard.style.left = '60%';
-            itemCard.style.top = '50%';
-            itemCard.style.transform = 'translate(-50%, -50%)';
-            itemCard.style.opacity = '0';
             itemCard.id = `item-${itemType}`;
+            
+            if (itemType === 'doll') {
+                // Для куколки особое позиционирование
+                itemCard.style.right = '0';
+                itemCard.style.top = '50%';
+                itemCard.style.transform = 'rotate(-90deg) translateX(80%)';
+                itemCard.style.transition = 'transform 0.5s ease';
+            } else {
+                itemCard.style.left = '60%';
+                itemCard.style.top = '50%';
+                itemCard.style.transform = 'translate(-50%, -50%)';
+            }
+            
+            itemCard.style.opacity = '0';
             document.querySelector('.game-container').appendChild(itemCard);
             
             // Анимация появления
@@ -493,17 +533,20 @@
                 // Добавляем в состояние игры
                 gameState.items.push(itemType);
             }, 300);
+
+            // Для куколки добавляем обработчик наведения
+            if (itemType === 'doll') {
+                itemCard.addEventListener('mouseenter', () => {
+                    itemCard.style.transform = 'rotate(-90deg) translateX(60%)';
+                });
+                itemCard.addEventListener('mouseleave', () => {
+                    itemCard.style.transform = 'rotate(-90deg) translateX(80%)';
+                });
+            }
         }
 
         // Размещение карт локаций вокруг текущей позиции
         function placeLocationCardsAroundCurrent() {
-            // Убираем карту куколки
-            const dollCard = document.getElementById('item-doll');
-            if (dollCard) {
-                dollCard.style.transform = 'translateX(80%) rotate(90deg)';
-                dollCard.classList.add('hidden-card');
-            }
-            
             // Скрываем заголовок
             titleContainer.style.opacity = '0';
             
@@ -517,6 +560,9 @@
                 { x: x, y: y + 1, direction: 'down' },
                 { x: x - 1, y: y, direction: 'left' }
             ];
+            
+            // Вычисляем новый масштаб в зависимости от количества карт
+            updateCardScale();
             
             // Создаем карты локаций вокруг текущей позиции
             positions.forEach((pos, index) => {
@@ -532,9 +578,13 @@
                     locationCard.dataset.y = pos.y;
                     locationCard.dataset.direction = pos.direction;
                     
-                    // Позиционируем карту относительно центра
-                    const offsetX = (pos.x - x) * 240; // 240px - расстояние между картами
-                    const offsetY = (pos.y - y) * 240;
+                    // Применяем масштаб
+                    locationCard.style.width = `${220 * gameState.cardScale}px`;
+                    locationCard.style.height = `${220 * gameState.cardScale}px`;
+                    
+                    // Позиционируем карту относительно центра с учетом масштаба
+                    const offsetX = (pos.x - x) * 240 * gameState.cardScale;
+                    const offsetY = (pos.y - y) * 240 * gameState.cardScale;
                     
                     locationCard.style.left = `calc(50% + ${offsetX}px)`;
                     locationCard.style.top = `calc(50% + ${offsetY}px)`;
@@ -552,13 +602,59 @@
                 }
             });
             
+            // Обновляем масштаб существующих карт
+            updateExistingCardsScale();
+            
             // Показываем карты направлений
             showDirectionCards();
             
-            // Обновляем подсказки
-            hintBottom.textContent = 'Доступные действия: Выбрать направление';
+            // Показываем подсказку снизу
+            showHintBottom();
             
             gameState.phase = 'locationCardsPlaced';
+        }
+
+        // Обновить масштаб существующих карт
+        function updateExistingCardsScale() {
+            const allLocationCards = document.querySelectorAll('.location-card');
+            allLocationCards.forEach(card => {
+                card.style.width = `${220 * gameState.cardScale}px`;
+                card.style.height = `${220 * gameState.cardScale}px`;
+                
+                // Обновляем позиционирование
+                const x = parseInt(card.dataset.x);
+                const y = parseInt(card.dataset.y);
+                const currentX = gameState.currentPosition.x;
+                const currentY = gameState.currentPosition.y;
+                
+                const offsetX = (x - currentX) * 240 * gameState.cardScale;
+                const offsetY = (y - currentY) * 240 * gameState.cardScale;
+                
+                card.style.left = `calc(50% + ${offsetX}px)`;
+                card.style.top = `calc(50% + ${offsetY}px)`;
+            });
+        }
+
+        // Вычислить новый масштаб карт
+        function updateCardScale() {
+            // Подсчитываем количество открытых карт
+            let openCardsCount = 0;
+            for (const key in gameState.locationGrid) {
+                if (gameState.locationGrid[key] && gameState.locationGrid[key] !== 'closed') {
+                    openCardsCount++;
+                }
+            }
+            
+            // Масштабируем в зависимости от количества карт
+            if (openCardsCount <= 4) {
+                gameState.cardScale = 1.0;
+            } else if (openCardsCount <= 9) {
+                gameState.cardScale = 0.8;
+            } else if (openCardsCount <= 16) {
+                gameState.cardScale = 0.6;
+            } else {
+                gameState.cardScale = 0.5;
+            }
         }
 
         // Показать карты направлений
@@ -582,6 +678,8 @@
                 
                 // Обработчик клика
                 directionCard.addEventListener('click', () => {
+                    // Скрываем подсказку снизу при выборе направления
+                    hideHintBottom();
                     handleDirectionClick(dir);
                 });
             });
@@ -616,7 +714,9 @@
                 if (gameState.locationGrid[newPositionKey] !== 'closed') {
                     gameState.currentPosition = { x: newX, y: newY };
                     gameState.currentLocation = gameState.locationGrid[newPositionKey];
-                    updateLocationTracker(getLocationName(gameState.currentLocation));
+                    // Добавляем в историю
+                    gameState.locationHistory.push(getLocationName(gameState.currentLocation));
+                    updateLocationTracker();
                     
                     // Показываем подсказку
                     hintBottom.style.display = 'block';
@@ -675,9 +775,11 @@
                 gameState.locationGrid[positionKey] = locationType;
                 gameState.currentPosition = { x, y };
                 gameState.currentLocation = locationType;
+                // Добавляем в историю
+                gameState.locationHistory.push(getLocationName(locationType));
                 
                 // Обновляем трекер локации
-                updateLocationTracker(getLocationName(locationType));
+                updateLocationTracker();
                 
                 // Добавляем обработчик клика в зависимости от типа локации
                 if (locationType === 'about' || locationType === 'purpose' || locationType === 'coop' || locationType === 'team') {
@@ -708,9 +810,6 @@
                 
                 // Обновляем фазу игры
                 updateGamePhase();
-                
-                // Обновляем подсказку справа
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
             }
         }
 
@@ -756,6 +855,16 @@
                     showTeamLocation();
                     break;
             }
+        }
+
+        // Обновить трекер локации с историей
+        function updateLocationTracker() {
+            let historyText = 'История перемещений:\n';
+            gameState.locationHistory.forEach((loc, index) => {
+                historyText += `${index + 1}. ${loc}\n`;
+            });
+            locationTracker.textContent = historyText;
+            locationTracker.style.display = 'block';
         }
 
         // Показать эффект локации
@@ -1125,16 +1234,10 @@
             hintBottom.style.display = 'none';
         }
 
-        // Обновить трекер локации
-        function updateLocationTracker(locationName) {
-            locationTracker.textContent = `Текущая локация: ${locationName}`;
-            locationTracker.style.display = 'block';
-        }
-
         // Инициализация игры
         function initGame() {
             // Показываем трекер локации
-            updateLocationTracker('Стартовая локация');
+            updateLocationTracker();
         }
 
         // Запуск инициализации при загрузке страницы
