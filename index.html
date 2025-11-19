@@ -1,1006 +1,1028 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Сон Журавля — прототип</title>
-
-<!-- Playfair Display -->
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-
-<style>
-  :root{
-    --card-w: 160px;
-    --card-h: 220px;
-    --loc-w: 200px;
-    --loc-h: 200px;
-    --dir-w: 110px;
-    --dir-h: 70px;
-    --gap: 18px;
-    --transition: 450ms cubic-bezier(.2,.9,.3,1);
-    --hint-bg: rgba(0,0,0,0.55);
-    --panel-radius: 12px;
-  }
-
-  html,body{
-    height:100%;
-    margin:0;
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    background: url('wood.png') center/cover no-repeat fixed;
-    -webkit-font-smoothing:antialiased;
-    color:#fafafa;
-  }
-
-  /* Top header area */
-  .header {
-    position: absolute;
-    top: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align:center;
-    pointer-events: none;
-  }
-  .title {
-    font-family: 'Playfair Display', serif;
-    font-size: 44px;
-    margin: 0;
-    line-height: 1;
-    text-shadow: 0 3px 10px rgba(0,0,0,0.6);
-  }
-  .subtitle {
-    font-family: 'Playfair Display', serif;
-    font-size: 18px;
-    margin-top:6px;
-    opacity:0.95;
-  }
-
-  /* Main board */
-  .board {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Deck area */
-  .deck-area {
-    position: absolute;
-    left: calc(50% - 220px);
-    top: 50%;
-    transform: translate(-20%, -10%);
-    width: var(--card-w);
-    height: var(--card-h);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex-direction:column;
-    gap:8px;
-  }
-
-  .deck {
-    width: var(--card-w);
-    height: var(--card-h);
-    background-image: url('back.png');
-    background-size: cover;
-    border-radius: 10px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-    transform-origin: center;
-    cursor: pointer;
-    transition: transform 250ms ease, left 300ms ease, top 300ms ease;
-    position: absolute;
-  }
-
-  .deck.hud {
-    pointer-events:auto;
-  }
-
-  .hint {
-    margin-top:10px;
-    width:260px;
-    background: var(--hint-bg);
-    padding:10px;
-    border-radius:10px;
-    font-size:14px;
-    color:#fff;
-    text-align:left;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    pointer-events: none;
-  }
-
-  /* Center play area where main card appears */
-  .play-area {
-    position: relative;
-    width: 720px;
-    height: 520px;
-    display: flex;
-    align-items:center;
-    justify-content:center;
-  }
-
-  .card {
-    position: absolute;
-    width: var(--loc-w);
-    height: var(--loc-h);
-    background-size: cover;
-    border-radius: 8px;
-    box-shadow: 0 14px 40px rgba(0,0,0,0.6);
-    transition: transform var(--transition), left var(--transition), top var(--transition), opacity var(--transition);
-    cursor: pointer;
-  }
-
-  .card.small { width: 140px; height: 140px; }
-
-  /* item cards (rectangular) */
-  .item {
-    width: var(--card-w);
-    height: 120px;
-    border-radius:8px;
-    background-size: cover;
-    box-shadow: 0 8px 26px rgba(0,0,0,0.5);
-    position: absolute;
-    transition: transform var(--transition), left var(--transition), top var(--transition);
-    cursor: pointer;
-  }
-
-  /* Hidden item stack at right (80% hidden) */
-  .item-stack {
-    position: absolute;
-    right: -calc(var(--card-w) * 0.8);
-    top: 50%;
-    transform: translateY(-50%);
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    align-items:flex-end;
-    pointer-events: auto;
-  }
-  .item-stack .item {
-    right:0;
-  }
-  .item-stack .peek {
-    transform: translateX(-18px);
-  }
-
-  .item-stack .item:hover {
-    transform: translateX(-46px) rotate(0deg);
-  }
-
-  /* Directions at bottom hidden 80% */
-  .directions {
-    position:absolute;
-    bottom: -calc(var(--dir-h) * 0.8);
-    left:50%;
-    transform: translateX(-50%);
-    display:flex;
-    gap:12px;
-    transition: bottom var(--transition);
-    pointer-events: auto;
-  }
-  .direction {
-    width: var(--dir-w);
-    height: var(--dir-h);
-    background-size: cover;
-    border-radius: 8px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-    transform: translateY(0);
-    transition: transform 250ms cubic-bezier(.2,.9,.3,1);
-    cursor: pointer;
-  }
-  .direction:hover { transform: translateY(-36px); }
-
-  /* Tracker */
-  .tracker {
-    position: absolute;
-    left: 18px;
-    top: 18px;
-    width: 260px;
-    background: rgba(0,0,0,0.6);
-    padding:10px;
-    border-radius:10px;
-    font-size:14px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-  }
-  .tracker h4 { margin:0 0 6px 0; font-size:15px; }
-
-  /* Modal info window */
-  .modal {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    width: min(840px, 92%);
-    height: min(70vh, 620px);
-    transform: translate(-50%,-50%) scale(0.98);
-    background: rgba(10,10,10,0.7);
-    border-radius: 12px;
-    padding:18px;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.8);
-    color:#fff;
-    display: none;
-    flex-direction: column;
-    z-index: 1200;
-  }
-  .modal.show { display:flex; animation: showModal 220ms ease both; }
-  @keyframes showModal { from {opacity:0; transform: translate(-50%,-50%) scale(0.96);} to {opacity:1; transform: translate(-50%,-50%) scale(1);} }
-
-  .modal .content {
-    overflow:auto;
-    padding-right:8px;
-    line-height:1.45;
-    font-size:15px;
-    background: rgba(255,255,255,0.02);
-    border-radius:8px;
-    padding:16px;
-    margin-bottom:12px;
-  }
-  .modal .close-btn {
-    align-self:flex-end;
-    background: #fff;
-    color:#111;
-    padding:8px 12px;
-    border-radius:8px;
-    cursor:pointer;
-    border:none;
-    font-weight:600;
-  }
-
-  /* Small helpers */
-  .top-right-hint {
-    position:absolute;
-    right:18px;
-    top:18px;
-    width:300px;
-    background: var(--hint-bg);
-    padding:10px;
-    border-radius:10px;
-    font-size:14px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-  }
-
-  /* responsive */
-  @media (max-width:900px){
-    .play-area { width: 92vw; height: 62vh; }
-    :root{ --loc-w: 160px; --loc-h:160px; --card-w:120px; --card-h:160px; --dir-w:90px; --dir-h:60px; }
-  }
-</style>
-</head>
-
-<body>
-
-  <div class="header">
-    <h1 class="title" id="mainTitle">Сон Журавля</h1>
-    <div class="subtitle" id="subTitle">Узнайте нас лучше</div>
-  </div>
-
-  <div class="tracker" id="tracker">
-    <h4>Трекер локации</h4>
-    <div id="trackerText">—</div>
-  </div>
-
-  <div class="top-right-hint" id="rightHint">
-    <strong>Доступные действия:</strong>
-    <div id="rightHintText">—</div>
-  </div>
-
-  <div class="board">
-    <div class="play-area" id="playArea">
-      <!-- dynamic cards will be injected here -->
-    </div>
-
-    <div class="deck-area">
-      <div class="deck hud" id="deck"></div>
-      <div class="hint" id="leftHint"> &lt;&lt;&lt; Выложить стартовую локацию</div>
-    </div>
-
-    <!-- item stack (right, partially hidden) -->
-    <div class="item-stack" id="itemStack"></div>
-
-    <!-- directions (hidden mostly below bottom) -->
-    <div class="directions" id="directions">
-      <div class="direction" id="dirUp" style="background-image:url('direction-up.png')" data-dir="up"></div>
-      <div class="direction" id="dirDown" style="background-image:url('direction-down.png')" data-dir="down"></div>
-      <div class="direction" id="dirLeft" style="background-image:url('direction-left.png')" data-dir="left"></div>
-      <div class="direction" id="dirRight" style="background-image:url('direction-right.png')" data-dir="right"></div>
-    </div>
-
-  </div>
-
-  <!-- modal window for location effects, lore, fights -->
-  <div class="modal" id="modal">
-    <div class="content" id="modalContent"></div>
-    <button class="close-btn" id="modalClose">Вернуться к игре</button>
-  </div>
-
-<script>
-/* ======= STATE & ASSETS ======= */
-const ASSETS = {
-  deck: 'back.png',
-  start: 'start.png',
-  'about': 'card-about.png',
-  'coop': 'card-coop.png',
-  'purpose': 'card-purpose.png',
-  'team': 'card-team.png',
-  'monster1': 'card-monster1.png',
-  'monster2': 'card-monster2.png',
-  'monster3': 'card-monster3.png',
-  'dir-up': 'direction-up.png',
-  'dir-down': 'direction-down.png',
-  'dir-left': 'direction-left.png',
-  'dir-right': 'direction-right.png',
-  'item-doll': 'item-doll.png',
-  'item-amulet': 'item-amulet.png',
-  'item-sword': 'item-sword.png'
-};
-
-const playArea = document.getElementById('playArea');
-const deckEl = document.getElementById('deck');
-const leftHint = document.getElementById('leftHint');
-const rightHintText = document.getElementById('rightHintText');
-const mainTitle = document.getElementById('mainTitle');
-const subTitle = document.getElementById('subTitle');
-const directionsEl = document.getElementById('directions');
-const modal = document.getElementById('modal');
-const modalContent = document.getElementById('modalContent');
-const modalClose = document.getElementById('modalClose');
-const trackerText = document.getElementById('trackerText');
-const itemStack = document.getElementById('itemStack');
-
-let state = {
-  deckMoved: false,
-  placedLocationCount: 0,
-  openedLocations: [], // array of objects {id, img, pos}
-  cursorLocation: null, // id of last opened location
-  items: [], // strings: 'doll','sword','amulet'
-  phase: 'initial',
-  // predefined sequence of what images to reveal for successive new location opens
-  locationSequence: [
-    'start', /* index0 -> start already used */
-    'monster1', // next new location → first monster
-    'purpose',  // then purpose
-    'monster2', // second monster
-    'coop',     // cooperation
-    'monster3', // third monster
-    'team'      // team card after escape
-  ],
-  sequenceIndex: 1 // next to reveal (we already opened start at 0)
-};
-
-/* util: create element with class and styles */
-function el(tag='div', cls='', styles={}) {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  Object.assign(e.style, styles);
-  return e;
-}
-
-/* position helpers: place things in play area coords */
-function centerCoords() {
-  const r = playArea.getBoundingClientRect();
-  return { x: r.width/2, y: r.height/2 };
-}
-
-/* convert center coords to CSS left/top for absolutely positioned elements inside playArea */
-function posToCss(x,y, elw=0,elh=0) {
-  return { left: (x - elw/2) + 'px', top: (y - elh/2) + 'px' };
-}
-
-/* ======= INITIAL UI ======= */
-deckEl.style.backgroundImage = `url('${ASSETS.deck}')`;
-rightHintText.innerText = '⟵⟵⟵ Выложить новые карты локаций';
-document.getElementById('rightHint').style.display='none'; // hide until needed
-directionsEl.style.pointerEvents = 'none';
-
-/* place deck initially at center area defined by .deck-area; deckEl is absolute so set left/top according to its container */
-function placeDeckInitial(){
-  const area = document.querySelector('.deck-area').getBoundingClientRect();
-  const d = deckEl.getBoundingClientRect();
-  // center deck inside deck-area
-  const container = document.querySelector('.deck-area');
-  const areaRect = container.getBoundingClientRect();
-  deckEl.style.left = (areaRect.left + (areaRect.width - d.width)/2 - playArea.getBoundingClientRect().left) + 'px';
-  deckEl.style.top  = (areaRect.top + (areaRect.height - d.height)/2 - playArea.getBoundingClientRect().top) + 'px';
-}
-window.addEventListener('load', placeDeckInitial);
-window.addEventListener('resize', placeDeckInitial);
-
-/* ======= GAME FLOW ACTIONS ======= */
-
-/* animate moving deck to left-bottom of viewport (inside playArea) */
-function moveDeckToBottomLeft(){
-  if (state.deckMoved) return;
-  state.deckMoved = true;
-  const area = playArea.getBoundingClientRect();
-  const d = deckEl.getBoundingClientRect();
-  const left = 18; // px inside playArea
-  const top = area.height - d.height - 18;
-  deckEl.style.transition = 'left 600ms cubic-bezier(.2,.9,.3,1), top 600ms cubic-bezier(.2,.9,.3,1), transform 400ms';
-  deckEl.style.left = left + 'px';
-  deckEl.style.top  = top + 'px';
-  // drop small tilt
-  deckEl.style.transform = 'rotate(-6deg)';
-}
-
-/* Create and animate a center location card (start) */
-function spawnStartCard(){
-  // create card element
-  const card = el('div','card');
-  card.dataset.type = 'location';
-  card.dataset.id = 'start';
-  card.style.backgroundImage = `url('${ASSETS.start}')`;
-  // start from bottom-left where deck is
-  const deckRect = deckEl.getBoundingClientRect();
-  const paRect = playArea.getBoundingClientRect();
-  const startLeft = deckRect.left - paRect.left;
-  const startTop  = deckRect.top  - paRect.top;
-  card.style.left = startLeft + 'px';
-  card.style.top  = startTop  + 'px';
-  card.style.transform = 'scale(0.98)';
-  playArea.appendChild(card);
-
-  // animate to center after small delay
-  setTimeout(()=>{
-    const csize = {w: card.offsetWidth, h: card.offsetHeight};
-    const center = centerCoords();
-    const css = posToCss(center.x, center.y - 8, csize.w, csize.h);
-    card.style.left = css.left;
-    card.style.top  = css.top;
-    card.style.transform = 'scale(1)';
-    // register opened location
-    state.openedLocations.push({id:'start', el:card, pos:'center'});
-    state.cursorLocation = 'start';
-    trackerText.innerText = 'Стартовая локация';
-    // attach click to location to apply effect
-    card.addEventListener('click', ()=> openLocationEffect('start'));
-  }, 220);
-}
-
-/* spawn initial item (doll) sliding from bottom-right to center, then sit right hidden */
-function spawnInitialItem(){
-  const item = el('div','item');
-  item.dataset.item = 'doll';
-  item.style.backgroundImage = `url('${ASSETS['item-doll']}')`;
-  const paRect = playArea.getBoundingClientRect();
-  // start from bottom-right offscreen
-  item.style.left = (paRect.width + 60) + 'px';
-  item.style.top  = (paRect.height + 40) + 'px';
-  playArea.appendChild(item);
-
-  // animate to center-right neighbor
-  setTimeout(()=>{
-    const center = centerCoords();
-    const targetX = center.x + 220;
-    const targetY = center.y + 10;
-    item.style.left = (targetX - item.offsetWidth/2) + 'px';
-    item.style.top  = (targetY - item.offsetHeight/2) + 'px';
-    // add small shadow & pointer
-    item.addEventListener('click', () => useItemFromStack('doll'));
-  }, 300);
-
-  // after appearing, add to items but move to right stack (hidden 80%) to indicate possession
-  setTimeout(()=>{
-    // remove from play area visual and create in itemStack (hidden)
-    if (item.parentNode) item.parentNode.removeChild(item);
-    const stackItem = el('div','item');
-    stackItem.dataset.item='doll';
-    stackItem.style.backgroundImage = `url('${ASSETS['item-doll']}')`;
-    stackItem.style.transform = 'rotate(0deg)';
-    stackItem.style.right = '0px';
-    stackItem.addEventListener('click', ()=> {
-      // clicking the hidden item peeks it (we emulate by toggling class)
-      // but actual use should be invoked by clicking "use" interactions in fights etc.
-      stackItem.classList.toggle('peek');
-    });
-    itemStack.appendChild(stackItem);
-    state.items.push('doll');
-    updateRightHint('Доступные действия: выложить новые карты локаций');
-  }, 1200);
-}
-
-/* show hint on right */
-function updateRightHint(text){
-  document.getElementById('rightHint').style.display='block';
-  rightHintText.innerText = text;
-}
-
-/* after deck first click full sequence */
-function onDeckFirstClick(){
-  moveDeckToBottomLeft();
-  setTimeout(()=>{
-    // spawn start card
-    spawnStartCard();
-    // update headers
-    mainTitle.innerText = 'Поздравляем с началом пути!';
-    subTitle.innerText = '';
-    // spawn initial item
-    spawnInitialItem();
-    // show item/loc effect hint under cards
-    showUnderCardsHint("Эффект карты локации: начать игру на знакомство\nПолученные предметы:\nкуколка-оберег");
-    updateRightHint('Доступные действия: <<<Выложить новые карты локаций');
-    // show directions (hidden) after a moment
-    setTimeout(()=> {
-      // show directions area (still hidden below); reveal by moving bottom to small negative (20%)
-      directionsEl.style.bottom = '-24px';
-      directionsEl.style.pointerEvents = 'none';
-    }, 700);
-  }, 260);
-}
-
-/* Show small text under center cards */
-let underHintEl = null;
-function showUnderCardsHint(text){
-  if (underHintEl) underHintEl.remove();
-  underHintEl = el('div','hint');
-  underHintEl.style.position = 'absolute';
-  underHintEl.style.bottom = '28px';
-  underHintEl.style.left = '50%';
-  underHintEl.style.transform = 'translateX(-50%)';
-  underHintEl.style.whiteSpace = 'pre-line';
-  underHintEl.innerText = text;
-  playArea.appendChild(underHintEl);
-}
-
-/* ======= SECOND CLICK: deal 4 face-down location cards around start (rubashka up) and show directions fully ======= */
-function dealSurroundingLocations(){
-  // remove title text
-  mainTitle.innerText = '';
-  subTitle.innerText = '';
-  // ensure start exists in openedLocations
-  const startRec = state.openedLocations.find(l => l.id === 'start');
-  if (!startRec) return;
-
-  const centerRect = startRec.el.getBoundingClientRect();
-  const paRect = playArea.getBoundingClientRect();
-  // positions relative to center of playArea
-  const center = centerCoords();
-  const offsets = {
-    up: {x:center.x, y:center.y - (state.openedLocations[0].el.offsetHeight + 130)},
-    down: {x:center.x, y:center.y + (state.openedLocations[0].el.offsetHeight + 130)},
-    left: {x:center.x - (state.openedLocations[0].el.offsetWidth + 150), y:center.y},
-    right:{x:center.x + (state.openedLocations[0].el.offsetWidth + 150), y:center.y}
-  };
-
-  // create 4 face-down location cards (rubashka up)
-  Object.keys(offsets).forEach((dir, idx)=>{
-    const c = el('div','card small');
-    c.dataset.type='location-back';
-    c.style.backgroundImage = `url('${ASSETS.deck}')`;
-    // start from deck position
-    const deckRect = deckEl.getBoundingClientRect();
-    const startLeft = deckRect.left - paRect.left;
-    const startTop  = deckRect.top  - paRect.top;
-    c.style.left = startLeft + 'px';
-    c.style.top  = startTop  + 'px';
-    playArea.appendChild(c);
-    // animate to position
-    setTimeout(()=>{
-      const css = posToCss(offsets[dir].x, offsets[dir].y, c.offsetWidth, c.offsetHeight);
-      c.style.left = css.left;
-      c.style.top  = css.top;
-      // store placeholder mapping
-      c.dataset.slot = dir;
-    }, 280 + (idx*80));
-  });
-
-  // show directions fully and allow interactivity
-  setTimeout(()=>{
-    directionsEl.style.bottom = '8px';
-    directionsEl.style.pointerEvents = 'auto';
-    updateRightHint('Доступные действия: выбрать направление');
-  }, 600);
-
-  // hide under hint
-  if (underHintEl) { underHintEl.remove(); underHintEl = null; }
-  document.getElementById('mainTitle').innerText = '';
-  document.getElementById('subTitle').innerText = '';
-}
-
-/* Reveal a location according to chosen direction; the rule: whichever slot (up/down/left/right) open, will be revealed.
-   The revealed image is determined by state.locationSequence[state.sequenceIndex]. If sequence exhausted - default to card-about.
-*/
-function revealLocationAtDirection(dir){
-  // find the face-down card with dataset.slot==dir
-  const backs = Array.from(playArea.querySelectorAll('.card')).filter(c=> c.dataset.slot === dir && c.dataset.type === 'location-back');
-  if (backs.length === 0) {
-    // if no back found, maybe the direction leads to already opened location (we should update tracker)
-    // find opened location by pos matching
-    const opened = state.openedLocations.find(l => l.pos === dir);
-    if (opened) {
-      // moving cursor to that location
-      state.cursorLocation = opened.id;
-      trackerText.innerText = displayNameForId(opened.id);
-      updateRightHint('Доступные действия: выбрать карту направления');
-    }
-    return;
-  }
-  const back = backs[0];
-  // determine which image to place
-  const seqImgId = state.locationSequence[state.sequenceIndex] || 'about';
-  state.sequenceIndex = Math.min(state.sequenceIndex + 1, state.locationSequence.length);
-  const img = ASSETS[seqImgId] ? ASSETS[seqImgId] : ASSETS['about'];
-  // replace back with actual location card
-  back.dataset.type = 'location';
-  back.style.backgroundImage = `url('${img}')`;
-  // store opened location with pos as dir so future navigation can reference
-  const id = seqImgId;
-  back.dataset.id = id;
-  back.dataset.pos = dir;
-  state.openedLocations.push({id:id, el:back, pos:dir});
-  state.cursorLocation = id;
-  trackerText.innerText = displayNameForId(id);
-
-  // attach click handler for applying effect when clicking location
-  back.addEventListener('click', ()=> applyLocationAction(id, back));
-  // after reveal, hide direction hint and set right hint
-  updateRightHint('Доступные действия: применить эффект локации');
-}
-
-/* Returns display-friendly name for IDs */
-function displayNameForId(id){
-  const map = {
-    'start': 'Стартовая локация',
-    'about': 'О локации (об игре)',
-    'purpose': 'Для кого и зачем',
-    'coop': 'Сотрудничество',
-    'team': 'О команде',
-    'monster1': 'Ой-ой (монстр 1)',
-    'monster2': 'Ой-ой (монстр 2)',
-    'monster3': 'Ой-ой (монстр 3)'
-  };
-  return map[id] || id;
-}
-
-/* applyLocationAction: when clicking on location to read/activate effect - opens modal with appropriate text or fight UI */
-function applyLocationAction(id, cardEl){
-  // depending on id show content
-  if (id === 'monster1' || id === 'monster2' || id === 'monster3') {
-    // show fight UI modal
-    openFightModal(id, cardEl);
-  } else if (id === 'about') {
-    openTextModal('На этой локации применяется эффект: «получение сакральных знаний»', aboutText());
-  } else if (id === 'purpose') {
-    openTextModal('На этой локации применяется эффект: «приоткрыть завесу тайны»', purposeText());
-  } else if (id === 'coop') {
-    openTextModal('На этой локации применяется эффект: «стать друзьями»', coopText());
-  } else if (id === 'team') {
-    openTextModal('На этой локации применяется эффект: «завершить сюжетную арку «знакомство»', teamText());
-  } else if (id === 'start') {
-    openTextModal('На этой локации применяется эффект: «начать игру на знакомство»', 'Это стартовая локация. Нажмите на карту направлений чтобы двигаться.');
-  } else {
-    openTextModal('Эффект локации', 'Описание локации...');
-  }
-}
-
-/* openTextModal: displays a scrollable modal with text content */
-function openTextModal(title, text){
-  modalContent.innerHTML = `<h3 style="margin-top:0">${title}</h3><div style="white-space:pre-line;">${text}</div>`;
-  modal.classList.add('show');
-}
-
-/* close modal handler */
-modalClose.addEventListener('click', ()=> {
-  modal.classList.remove('show');
-  updateRightHint('Доступные действия: выложить карты локации');
-});
-
-/* About/purpose/coop/team text content functions */
-function aboutText(){
-  return `ЛОР
-Сеттинг – временной период после русско-японской войны
-Бэкграунд игрового цикла – солдат, вернувшийся с войны во снах видит кошмары, где сражается с японскими мифическими существами.
-Таким образом игра представляет собой борьбу с внутренними монстрами (ПТСР) и,  в зависимости от исхода партии,  исцеление или безумие героя
-Формат игры – один против всех. Герой против трех монстров
-
-ИГРОВОЙ ЦИКЛ
-Фаза 1. «Погружение в сон»
-> Герой выкладывает необходимое количество карт локаций так, чтобы все стороны одной из уже выложенных карт были «закрыты» другими картами
-Фаза 2. «Пора бежать»
-> Все игроки набирают по четыре карты направлений
-Фаза 3. «Муки выбора»
-> Игроки принимают решение куда идти и выкладывают соответствующую карту направления взакрытую.
-Фаза 4. «Столкновение»
-> Карты направлений вскрываются. Проверяется произошло ли столкновение.
->> Если не произошло –переход к фазе «погружение в сон»
->> Если произошло – игроки, оказавшиеся на одной локации начинают сражение
-Фаза 5. «Сражение»
-> Сражающиеся бросают кубы, при желании используют доп. карточки. Победившая сторона получает свой эффект карточки локации
-Далее игроки возвращаются к первой фазе.`;
-}
-function purposeText(){
-  return `Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душой компании. Мы создаём игру, которая станет его новым козырем в коллекции.
-
-Наша игра идеально подойдёт для трёх сегментов игроков:
-- Стратеги и тактики...
-- Фанаты мифологии...
-- Визуалы и эстеты...
-
-Кому понравится? (Смежный игровой опыт):
-Если вы играли в: 
-«Ярость дракулы», 
-«Шепот за стеной»,
-«Нечто», 
-«Тираны подземья», 
-«Иниш», 
-«Кто накормит кракена?». 
-То вероятнее всего, вам порекомендуют «Сон журавля».`;
-}
-function coopText(){
-  return `Что мы предлагаем партнёру-издателю:
-Готовый, протестированный концепт
-Мы предлагаем прототип настольной игры с продуманным дизайном карт, правилами и готовой визуальной концепцией. Весь предпродакшн — на нас.
-
-Уникальное трансмедийное преимущество...
-(сокращено: см. полную версию в презентации)`;
-}
-function teamText(){
-  return `Мы – KRAW Studio. Группа инициативных любителей настольных игр (и не только)
-
-Настольная игра: 
-Анастасия Оглы, Павел Алексеев — гейм-дизайнеры
-Александра Юрченко и Олеся Кан — графические дизайнеры
-Александра Волкова — нарративный дизайнер
-
-Компьютерная игра:
-Максим Усачев — автор идеи, разработчик.
-Никита Старков — саунд-дизайнер.
-Дарья Горбунова — левел-дизайнер.
-
-Контакты:
-Почта: мяумяу
-Наши тг: гав гав`;
-}
-
-/* ========= FIGHT LOGIC =========== */
-
-function openFightModal(monsterId, locationEl){
-  // prepare modal content depending on monster
-  let monsterText = '';
-  let monsterPower = 10;
-  if (monsterId === 'monster1'){ monsterText = 'Вы выходите из чащи на краю заброшенного рисового поля...'; monsterPower = 10; }
-  if (monsterId === 'monster2'){ monsterText = 'Пройдя заросший двор, вы замечаете...'; monsterPower = 11; }
-  if (monsterId === 'monster3'){ monsterText = 'Вы пробираетесь сквозь частокол высохших стеблей...'; monsterPower = 12; }
-
-  // build fight UI
-  modalContent.innerHTML = `<h3>Ой-ой, кажется вас нагнал монстр</h3>
-  <div style="white-space:pre-line">${monsterText}</div>
-  <div style="margin-top:12px"><strong>Сила противника – ${monsterPower}</strong></div>
-  <div id="fightArea" style="margin-top:12px;"></div>
-  `;
-
-  const fightArea = document.getElementById('fightArea');
-  // determine available buttons based on player's items
-  const hasSword = state.items.includes('sword');
-  const hasDoll  = state.items.includes('doll');
-  const hasAmulet = state.items.includes('amulet');
-
-  if (monsterId === 'monster1') {
-    // only attack button; suggestion to use doll if fail
-    const attackBtn = document.createElement('button');
-    attackBtn.textContent = 'бросить кубики, чтобы атаковать';
-    attackBtn.className = 'close-btn';
-    attackBtn.onclick = ()=> {
-      const r1 = rollDie(); const r2 = rollDie();
-      fightArea.innerHTML = `<div>результат бросков: ${r1} и ${r2}.</div>`;
-      if (r1 + r2 <= Math.floor(monsterPower/2)){ // treat as fail
-        fightArea.innerHTML += '<div>Кажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!</div>';
-        // if doll exists, show clickable item in modal to use
-        if (hasDoll) {
-          const useDollBtn = document.createElement('button');
-          useDollBtn.textContent = 'Использовать куколку-оберег';
-          useDollBtn.className = 'close-btn';
-          useDollBtn.style.marginTop='8px';
-          useDollBtn.onclick = ()=> {
-            // consume doll
-            removeItem('doll');
-            fightArea.innerHTML = '';
-            // activate attack again
-            attackBtn.disabled = false;
-            // remove doll card from itemStack visual
-            renderItemStack();
-          };
-          fightArea.appendChild(useDollBtn);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сон Журавля</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
         }
-      } else {
-        // success on second roll scenario is handled by user using item then pressing attack again; but here assume success if sum >= threshold
-        // apply reward: give sword
-        fightArea.innerHTML += '<div>Другое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации «Получить оружие».</div>';
-        giveItem('sword');
-        renderItemStack();
-      }
-    };
-    fightArea.appendChild(attackBtn);
-  } else if (monsterId === 'monster2') {
-    // two buttons: fight bare hands or use sword
-    const hands = document.createElement('button');
-    hands.textContent = 'Биться голыми руками';
-    hands.className = 'close-btn';
-    hands.onclick = ()=> {
-      showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'fists'});
-    };
-    fightArea.appendChild(hands);
+        
+        body {
+            font-family: 'Playfair Display', serif;
+            background-image: url('wood.png');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            color: #fff;
+        }
+        
+        .game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        /* Заголовки */
+        .title-container {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        
+        .title {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Карты */
+        .card {
+            position: absolute;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            transition: all 0.8s ease;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .location-card {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .item-card, .direction-card {
+            width: 140px;
+            height: 200px;
+        }
+        
+        .deck {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140px;
+            height: 200px;
+            background-image: url('back.png');
+            background-size: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            z-index: 5;
+            transition: all 0.8s ease;
+        }
+        
+        /* Подсказки */
+        .hint {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            max-width: 250px;
+            line-height: 1.4;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .hint-right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .hint-bottom {
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+        
+        /* Трекер локации */
+        .location-tracker {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            z-index: 10;
+        }
+        
+        /* Модальное окно */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal h2 {
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .modal p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .modal button {
+            background-color: #8B4513;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        /* Кнопки сражения */
+        .battle-buttons {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+        
+        .battle-button {
+            background-color: rgba(139, 69, 19, 0.9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Результат броска */
+        .roll-result {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            max-width: 400px;
+            z-index: 10;
+        }
+        
+        /* Скрытые карты */
+        .hidden-card {
+            transform: translateX(80%) rotate(90deg);
+            transition: transform 0.5s ease;
+        }
+        
+        .hidden-card:hover {
+            transform: translateX(60%) rotate(90deg);
+        }
+        
+        .hidden-direction {
+            transform: translateY(80%);
+            transition: transform 0.5s ease;
+        }
+        
+        .hidden-direction:hover {
+            transform: translateY(60%);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Заголовки -->
+        <div class="title-container">
+            <h1 class="title">Сон Журавля</h1>
+            <p class="subtitle">Узнайте нас лучше</p>
+        </div>
+        
+        <!-- Колода -->
+        <div class="deck" id="deck"></div>
+        
+        <!-- Подсказки -->
+        <div class="hint hint-right" id="hint-right"><<< Выложить стартовую локацию</div>
+        <div class="hint hint-bottom" id="hint-bottom" style="display: none;"></div>
+        
+        <!-- Трекер локации -->
+        <div class="location-tracker" id="location-tracker" style="display: none;"></div>
+        
+        <!-- Модальное окно -->
+        <div class="modal" id="modal">
+            <div class="modal-content">
+                <h2 id="modal-title"></h2>
+                <p id="modal-text"></p>
+                <button id="modal-close">Вернуться к игре</button>
+            </div>
+        </div>
+        
+        <!-- Результат броска -->
+        <div class="roll-result" id="roll-result" style="display: none;"></div>
+        
+        <!-- Кнопки сражения -->
+        <div class="battle-buttons" id="battle-buttons" style="display: none;"></div>
+    </div>
 
-    if (hasSword){
-      const useSword = document.createElement('button');
-      useSword.textContent = 'Использовать Меч-кладенец';
-      useSword.className = 'close-btn';
-      useSword.style.marginLeft='8px';
-      useSword.onclick = ()=> {
-        // sword-based attack: enable attack button
-        showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'sword'});
-        // sword will be consumed in success branch
-      };
-      fightArea.appendChild(useSword);
-    } else {
-      const hint = document.createElement('div');
-      hint.style.marginTop='8px';
-      hint.textContent = 'У вас нет Меч-кладенца — попробуйте биться голыми руками или использовать амулет для побега.';
-      fightArea.appendChild(hint);
-    }
+    <script>
+        // Состояние игры
+        const gameState = {
+            currentLocation: null,
+            items: [],
+            locations: {},
+            directions: [],
+            phase: 'start',
+            monster1Defeated: false,
+            monster2Defeated: false,
+            monster3Defeated: false
+        };
 
-  } else if (monsterId === 'monster3') {
-    // if player has sword then show both choices, else only throw dice and encourage using amulet to escape on fail
-    const hands = document.createElement('button');
-    hands.textContent = 'Биться голыми руками';
-    hands.className = 'close-btn';
-    hands.onclick = ()=> {
-      showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'fists'});
-    };
-    fightArea.appendChild(hands);
+        // DOM элементы
+        const deck = document.getElementById('deck');
+        const hintRight = document.getElementById('hint-right');
+        const hintBottom = document.getElementById('hint-bottom');
+        const locationTracker = document.getElementById('location-tracker');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+        const modalClose = document.getElementById('modal-close');
+        const rollResult = document.getElementById('roll-result');
+        const battleButtons = document.getElementById('battle-buttons');
+        const titleContainer = document.querySelector('.title-container');
 
-    if (hasSword){
-      const useSword = document.createElement('button');
-      useSword.textContent = 'Использовать Меч-кладенец';
-      useSword.className = 'close-btn';
-      useSword.style.marginLeft='8px';
-      useSword.onclick = ()=> {
-        showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'sword'});
-      };
-      fightArea.appendChild(useSword);
-    } else {
-      const hint = document.createElement('div');
-      hint.style.marginTop='8px';
-      hint.textContent = 'Если нет меча — вы можете попытаться бросить кубики, но, возможно, придётся использовать амулет для побега.';
-      fightArea.appendChild(hint);
-    }
-  }
+        // Обработчик клика на колоду
+        deck.addEventListener('click', handleDeckClick);
 
-  modal.classList.add('show');
-}
+        // Обработчик закрытия модального окна
+        modalClose.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
 
-/* helper: roll a single die 1..6 */
-function rollDie(){ return Math.floor(Math.random()*6) + 1; }
+        // Функция обработки клика на колоду
+        function handleDeckClick() {
+            switch(gameState.phase) {
+                case 'start':
+                    startGame();
+                    break;
+                case 'afterStart':
+                    placeLocationCards();
+                    break;
+                case 'afterAbout':
+                    placeLocationCardsAround('about');
+                    break;
+                case 'afterMonster1':
+                    placeLocationCardsAround('monster1');
+                    break;
+                case 'afterPurpose':
+                    placeLocationCardsAround('purpose');
+                    break;
+                case 'afterMonster2':
+                    placeLocationCardsAround('monster2');
+                    break;
+                case 'afterCoop':
+                    placeLocationCardsAround('coop');
+                    break;
+                case 'afterMonster3':
+                    placeLocationCardsAround('monster3');
+                    break;
+            }
+        }
 
-/* show attack roll and process results */
-function showAttackRoll(monsterPower, fightArea, locationEl, opts={weapon:'fists'}){
-  fightArea.innerHTML = '';
-  const r1 = rollDie(), r2 = rollDie();
-  fightArea.innerHTML = `<div>результат бросков: ${r1} и ${r2}.</div>`;
-  const total = r1 + r2;
-  // simple success criteria: if total >= 8 OR if both dice equal (crit) success
-  const success = (total >= 10) || (r1===r2 && r1>=5) || (opts.weapon==='sword' && total >= 8);
-  if (!success) {
-    // if fail suggest using amulet if present
-    if (state.items.includes('amulet')) {
-      const useAm = document.createElement('button');
-      useAm.textContent = 'Использовать амулет, чтобы сбежать';
-      useAm.className = 'close-btn';
-      useAm.style.marginTop='8px';
-      useAm.onclick = ()=>{
-        removeItem('amulet');
-        renderItemStack();
-        fightArea.innerHTML = 'Вы использовали амулет и ушли с локации. Выберите направление чтобы переместиться.';
-        modal.classList.remove('show');
-      };
-      fightArea.appendChild(useAm);
-    } else {
-      fightArea.innerHTML += '<div>Ничего страшного! Неудача — часть приключения. Попробуйте другое действие.</div>';
-    }
-  } else {
-    // success: reward depending on monster / location -> give sword or amulet
-    if (!state.items.includes('sword')) {
-      giveItem('sword');
-      fightArea.innerHTML += '<div>За победу над монстром применяется эффект локации: Получить оружие (Меч-кладенец).</div>';
-      renderItemStack();
-    } else {
-      // if already have sword, give amulet
-      giveItem('amulet');
-      fightArea.innerHTML += '<div>Вы получили Амулет.</div>';
-      renderItemStack();
-    }
-    // remove monster card visually (or mark defeated)
-    setTimeout(()=> {
-      modal.classList.remove('show');
-    }, 1200);
-  }
-}
+        // Начало игры
+        function startGame() {
+            // Перемещаем колоду
+            deck.style.left = '10%';
+            deck.style.top = '80%';
+            deck.style.transform = 'translate(0, 0)';
+            
+            // Обновляем заголовки
+            setTimeout(() => {
+                titleContainer.querySelector('.title').textContent = 'Поздравляем с началом пути!';
+                titleContainer.querySelector('.subtitle').style.display = 'none';
+                
+                // Показываем стартовую локацию
+                showStartLocation();
+            }, 800);
+            
+            gameState.phase = 'afterStart';
+        }
 
-/* giveItem: adds to state and places visual in the right stack */
-function giveItem(itemId){
-  if (!state.items.includes(itemId)) state.items.push(itemId);
-}
+        // Показать стартовую локацию
+        function showStartLocation() {
+            // Создаем карту стартовой локации
+            const startCard = document.createElement('div');
+            startCard.className = 'card location-card';
+            startCard.style.backgroundImage = 'url("start.png")';
+            startCard.style.left = '50%';
+            startCard.style.top = '50%';
+            startCard.style.transform = 'translate(-50%, -50%)';
+            startCard.style.opacity = '0';
+            document.querySelector('.game-container').appendChild(startCard);
+            
+            // Анимация появления
+            setTimeout(() => {
+                startCard.style.opacity = '1';
+                
+                // Показываем карту предмета
+                showItem('doll');
+                
+                // Обновляем подсказки
+                hintRight.textContent = 'Доступные действия:\n<<<Выложить новые карты локаций';
+                hintBottom.style.display = 'block';
+                hintBottom.innerHTML = 'Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
+                
+                // Сохраняем текущую локацию
+                gameState.currentLocation = 'start';
+            }, 300);
+        }
 
-/* removeItem */
-function removeItem(itemId){
-  const idx = state.items.indexOf(itemId);
-  if (idx !== -1) state.items.splice(idx,1);
-}
+        // Показать карту предмета
+        function showItem(itemType) {
+            const itemCard = document.createElement('div');
+            itemCard.className = 'card item-card';
+            itemCard.style.backgroundImage = `url("item-${itemType}.png")`;
+            itemCard.style.left = '60%';
+            itemCard.style.top = '50%';
+            itemCard.style.transform = 'translate(-50%, -50%)';
+            itemCard.style.opacity = '0';
+            itemCard.id = `item-${itemType}`;
+            document.querySelector('.game-container').appendChild(itemCard);
+            
+            // Анимация появления
+            setTimeout(() => {
+                itemCard.style.opacity = '1';
+                
+                // Добавляем в состояние игры
+                gameState.items.push(itemType);
+            }, 300);
+        }
 
-/* render the item stack on right according to state.items */
-function renderItemStack(){
-  itemStack.innerHTML = '';
-  // for each item, create a hidden card at right offset (stack)
-  state.items.forEach((it, idx) => {
-    const stackItem = el('div','item');
-    stackItem.dataset.item = it;
-    const asset = (it==='doll'? ASSETS['item-doll'] : it==='sword'? ASSETS['item-sword'] : ASSETS['item-amulet']);
-    stackItem.style.backgroundImage = `url('${asset}')`;
-    stackItem.style.marginTop = (idx * 12) + 'px';
-    stackItem.addEventListener('click', ()=> {
-      // when clicked in stack, peek and allow usage depending on context (for prototype simply toggle peek)
-      stackItem.classList.toggle('peek');
-    });
-    itemStack.appendChild(stackItem);
-  });
-}
+        // Размещение карт локаций вокруг стартовой локации
+        function placeLocationCards() {
+            // Убираем карту куколки
+            const dollCard = document.getElementById('item-doll');
+            if (dollCard) {
+                dollCard.style.transform = 'translateX(80%) rotate(90deg)';
+                dollCard.classList.add('hidden-card');
+            }
+            
+            // Скрываем заголовок
+            titleContainer.style.opacity = '0';
+            
+            // Создаем 4 карты локаций
+            const positions = [
+                { left: '50%', top: '30%', transform: 'translate(-50%, -50%)' }, // сверху
+                { left: '70%', top: '50%', transform: 'translate(-50%, -50%)' }, // справа
+                { left: '50%', top: '70%', transform: 'translate(-50%, -50%)' }, // снизу
+                { left: '30%', top: '50%', transform: 'translate(-50%, -50%)' }  // слева
+            ];
+            
+            positions.forEach((pos, index) => {
+                const locationCard = document.createElement('div');
+                locationCard.className = 'card location-card';
+                locationCard.style.backgroundImage = 'url("back.png")';
+                locationCard.style.left = pos.left;
+                locationCard.style.top = pos.top;
+                locationCard.style.transform = pos.transform;
+                locationCard.style.opacity = '0';
+                locationCard.dataset.position = index;
+                locationCard.dataset.location = 'about'; // Все ведут к карте "об игре"
+                document.querySelector('.game-container').appendChild(locationCard);
+                
+                // Анимация появления
+                setTimeout(() => {
+                    locationCard.style.opacity = '1';
+                }, index * 200);
+                
+                // Обработчик клика
+                locationCard.addEventListener('click', () => {
+                    if (locationCard.style.backgroundImage.includes('back.png')) {
+                        revealLocationCard(locationCard);
+                    }
+                });
+            });
+            
+            // Показываем карты направлений
+            showDirectionCards();
+            
+            // Обновляем подсказки
+            hintBottom.textContent = 'Доступные действия: выбрать направление';
+            
+            gameState.phase = 'locationCardsPlaced';
+        }
 
-/* useItemFromStack used during interactions (like using doll in monster1 scenario) */
-function useItemFromStack(itemId){
-  if (!state.items.includes(itemId)) return;
-  // show effect demo (remove item and show a message)
-  removeItem(itemId);
-  renderItemStack();
-  showUnderCardsHint(`Вы использовали предмет: ${itemId}`);
-  setTimeout(()=> { if (underHintEl) { underHintEl.remove(); underHintEl=null; } }, 1800);
-}
+        // Показать карты направлений
+        function showDirectionCards() {
+            const directions = ['up', 'right', 'down', 'left'];
+            const positions = [
+                { left: '40%', bottom: '10%' },
+                { left: '50%', bottom: '10%' },
+                { left: '60%', bottom: '10%' },
+                { left: '70%', bottom: '10%' }
+            ];
+            
+            directions.forEach((dir, index) => {
+                const directionCard = document.createElement('div');
+                directionCard.className = 'card direction-card hidden-direction';
+                directionCard.style.backgroundImage = `url("direction-${dir}.png")`;
+                directionCard.style.left = positions[index].left;
+                directionCard.style.bottom = positions[index].bottom;
+                directionCard.dataset.direction = dir;
+                document.querySelector('.game-container').appendChild(directionCard);
+                
+                // Обработчик клика
+                directionCard.addEventListener('click', () => {
+                    handleDirectionClick(dir);
+                });
+            });
+        }
 
-/* ======= EVENTS wiring ======= */
+        // Обработка клика на карту направления
+        function handleDirectionClick(direction) {
+            // Определяем, какая карта должна открыться
+            let targetLocation;
+            
+            switch(gameState.currentLocation) {
+                case 'start':
+                    // Все направления ведут к карте "об игре"
+                    targetLocation = 'about';
+                    break;
+                case 'about':
+                    // Одно из направлений ведет к монстру 1
+                    targetLocation = 'monster1';
+                    break;
+                case 'monster1':
+                    // Одно из направлений ведет к карте "для кого и зачем"
+                    targetLocation = 'purpose';
+                    break;
+                case 'purpose':
+                    // Одно из направлений ведет к монстру 2
+                    targetLocation = 'monster2';
+                    break;
+                case 'monster2':
+                    // Одно из направлений ведет к карте "сотрудничество"
+                    targetLocation = 'coop';
+                    break;
+                case 'coop':
+                    // Одно из направлений ведет к монстру 3
+                    targetLocation = 'monster3';
+                    break;
+                case 'monster3':
+                    // Одно из направлений ведет к карте "команда"
+                    targetLocation = 'team';
+                    break;
+                default:
+                    targetLocation = 'about';
+            }
+            
+            // Обновляем трекер локации
+            updateLocationTracker(targetLocation);
+            
+            // Показываем карту локации
+            showLocationCard(targetLocation);
+            
+            // Обновляем состояние игры
+            gameState.currentLocation = targetLocation;
+            
+            // Скрываем подсказку направлений
+            hintBottom.style.display = 'none';
+            
+            // Обновляем фазу игры
+            if (targetLocation === 'about') {
+                gameState.phase = 'afterAbout';
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+            } else if (targetLocation === 'monster1') {
+                gameState.phase = 'afterMonster1';
+                // Показываем подсказку для монстра
+                setTimeout(() => {
+                    hintBottom.style.display = 'block';
+                    hintBottom.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
+                }, 1000);
+            } else if (targetLocation === 'purpose') {
+                gameState.phase = 'afterPurpose';
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+            } else if (targetLocation === 'monster2') {
+                gameState.phase = 'afterMonster2';
+                // Показываем подсказку для монстра
+                setTimeout(() => {
+                    hintBottom.style.display = 'block';
+                    hintBottom.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
+                }, 1000);
+            } else if (targetLocation === 'coop') {
+                gameState.phase = 'afterCoop';
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+            } else if (targetLocation === 'monster3') {
+                gameState.phase = 'afterMonster3';
+                // Показываем подсказку для монстра
+                setTimeout(() => {
+                    hintBottom.style.display = 'block';
+                    hintBottom.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
+                }, 1000);
+            } else if (targetLocation === 'team') {
+                // Конец игры
+                showTeamLocation();
+            }
+        }
 
-/* Deck click handler */
-deckEl.addEventListener('click', ()=> {
-  if (!state.deckMoved) {
-    onDeckFirstClick();
-    return;
-  }
-  // if deck already moved, clicking deals new face-down location cards (from deck)
-  dealSurroundingLocations();
-});
+        // Показать карту локации
+        function showLocationCard(locationType) {
+            // Создаем карту локации
+            const locationCard = document.createElement('div');
+            locationCard.className = 'card location-card';
+            locationCard.style.backgroundImage = `url("card-${locationType}.png")`;
+            locationCard.style.left = '50%';
+            locationCard.style.top = '50%';
+            locationCard.style.transform = 'translate(-50%, -50%)';
+            locationCard.style.opacity = '0';
+            locationCard.id = `location-${locationType}`;
+            document.querySelector('.game-container').appendChild(locationCard);
+            
+            // Анимация появления
+            setTimeout(() => {
+                locationCard.style.opacity = '1';
+                
+                // Добавляем обработчик клика в зависимости от типа локации
+                if (locationType === 'about' || locationType === 'purpose' || locationType === 'coop' || locationType === 'team') {
+                    locationCard.addEventListener('click', () => {
+                        showLocationEffect(locationType);
+                    });
+                    
+                    // Показываем подсказку
+                    hintBottom.style.display = 'block';
+                    hintBottom.textContent = 'Доступные действия: применить эффект локации';
+                } else if (locationType.includes('monster')) {
+                    locationCard.addEventListener('click', () => {
+                        showMonsterBattle(locationType);
+                    });
+                }
+            }, 300);
+        }
 
-/* directions click handlers */
-document.getElementById('dirUp').addEventListener('click', ()=> { revealLocationAtDirection('up'); });
-document.getElementById('dirDown').addEventListener('click', ()=> { revealLocationAtDirection('down'); });
-document.getElementById('dirLeft').addEventListener('click', ()=> { revealLocationAtDirection('left'); });
-document.getElementById('dirRight').addEventListener('click', ()=> { revealLocationAtDirection('right'); });
+        // Показать эффект локации
+        function showLocationEffect(locationType) {
+            let title, text;
+            
+            switch(locationType) {
+                case 'about':
+                    title = 'Об игре';
+                    text = 'На этой локации применяется эффект: «получение сакральных знаний»';
+                    break;
+                case 'purpose':
+                    title = 'Для кого и зачем';
+                    text = 'На этой локации применяется эффект: «приоткрыть завесу тайны». Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душой компании. Мы создаём игру, которая станет его новым козырем в коллекции. Наша игра идеально подойдёт для трёх сегментов игроков: Стратеги и тактики. Тем, кто любит выстраивать стратегии, комбинировать карты и наслаждаться чувством контроля над сложной системой. Фанаты мифологии. Те, кто изучает культуру стран, любит погружаться в атмосферные сеттинги. Это люди, которые увлекаются русским и/или японским фольклором, а еще оценят их тонкое переплетение. Визуалы и эстеты. Те, для кого важен визуальный стиль. Мы создаем визуал, где старославянские узоры встречаются с лаконичной японской графикой. Кому понравится? (Смежный игровой опыт): Если вы играли в: «Ярость дракулы», «Шепот за стеной», «Нечто», «Тираны подземья», «Иниш», «Кто накормит кракена?». То вероятнее всего, вам порекомендуют «Сон журавля».';
+                    break;
+                case 'coop':
+                    title = 'Сотрудничество';
+                    text = 'На этой локации применяется эффект: «стать друзьями». Что мы предлагаем партнёру-издателю: Готовый, протестированный концепт. Мы предлагаем прототип настольной игры с продуманным дизайном карт, правилами и готовой визуальной концепцией. Весь предпродакшн — на нас. Уникальное трансмедийное преимущество. Параллельно мы ведём разработку компьютерной игры «Сон журавля» — это трансмедийное расширение настольной, но более нарративно насыщенная и продолжительная игра, предназначенная для личного прохождения. С точки зрения маркетинга — это хорошая возможность для кросс-промоушена. Выход компьютерной игры подогреет интерес к настольной, и наоборот. Мы создаём целый мир для нашей аудитории. Инициативная и вовлечённая команда. Мы горим своим проектом. Мы готовы активно участвовать на всех этапах: от доработки дизайна и организации тестирований до поддержки маркетинговых активностей. Будем рады стать вашими партнерами! Что мы ищем от партнёра: Экспертизу и поддержку в издании. Мы хотим работать с профессионалами, которые помогут нам вывести игру на рынок и поддержать нас на этапах производстве продукции и дистрибуции. Партнёрство в маркетинге и продвижении. Мы верим в наш продукт и готовы вкладывать силы, но нам нужна ваша мощь и опыт в том, чтобы громко заявить о себе и донести игру до нашей целевой аудитории.';
+                    break;
+            }
+            
+            modalTitle.textContent = title;
+            modalText.textContent = text;
+            modal.classList.add('active');
+        }
 
-/* Apply location action map (called when location is clicked) */
-function openLocationEffect(id){
-  applyLocationAction(id);
-}
+        // Показать битву с монстром
+        function showMonsterBattle(monsterType) {
+            let monsterText, strength;
+            
+            switch(monsterType) {
+                case 'monster1':
+                    monsterText = 'Вы выходите из чащи на краю заброшенного рисового поля. Воздух густой и сладковатый от запаха гниющих стеблей. Посреди грязи, под низко нависшим туманом, стоит неестественно прямой скелет в пропитанной грязью, рваной японской военной форме. Пустой череп медленно поворачивается в вашу сторону с тихим скрежетом. Его костяные пальцы сжимают древко ржавого штыка-мебари.';
+                    strength = 10;
+                    break;
+                case 'monster2':
+                    monsterText = 'Пройдя заросший двор, вы замечаете у разбитого колодца одинокую фигуру женщины в потёртом, но чистом кимоно. Она сидит на корточках, беззвучно рыдая, а её длинные, чёрные волосы скрывают лицо. Воздух неподвижен, и лишь лунный свет выхватывает её из тьмы. При вашем приближении она поднимает голову. Её лицо бледно и прекрасно, но искажено безмолвной тоской. Она что-то шепчет, но вы слышите лишь шелест листвы. Пока вы не замечаете, что тень от её шеи на каменной плите неестественно длинна и извивается, как змея. Ещё миг — и раздастся сухой, костяной хруст, и её голова на гибкой, вытягивающейся шее рванётся к вам с шипящим воплем.';
+                    strength = 11;
+                    break;
+                case 'monster3':
+                    monsterText = 'Вы пробираетесь сквозь частокол высохших стеблей, и воздух с каждой секундой становится гуще. Впереди, в просвете между стволами, вы видите покосившуюся хижину. У входа, спиной к вам, сидит женщина в алом кимоно, нежно напевающая колыбельную. Ее длинные волосы струятся по спине, сливаясь с тенями. Но что-то не так... вы замечаете, что с корявых ветвей над ней свисают не лозы, а шелковистые коконы, некоторые из которых тихо шевелятся. Женщина оборачивается. Ее лицо поразительной красоты искажено голодной улыбкой, а за спиной, в тенях, плавно расходятся в стороны несколько длинных, блестящих, хитиновых конечностей. Ее рот открывается, и раздается нечеловеческий, щелкающий хрип.';
+                    strength = 12;
+                    break;
+            }
+            
+            modalTitle.textContent = 'Встреча с монстром';
+            modalText.innerHTML = `${monsterText}<br><br>Сила противника – ${strength}`;
+            modal.classList.add('active');
+            
+            // Показываем кнопки сражения
+            battleButtons.style.display = 'flex';
+            battleButtons.innerHTML = '';
+            
+            if (monsterType === 'monster1') {
+                const attackButton = document.createElement('button');
+                attackButton.className = 'battle-button';
+                attackButton.textContent = 'бросить кубики, чтобы атаковать';
+                attackButton.addEventListener('click', () => {
+                    handleFirstMonsterAttack();
+                });
+                battleButtons.appendChild(attackButton);
+            } else if (monsterType === 'monster2') {
+                const bareHandsButton = document.createElement('button');
+                bareHandsButton.className = 'battle-button';
+                bareHandsButton.textContent = 'Биться голыми руками';
+                bareHandsButton.addEventListener('click', () => {
+                    handleSecondMonsterBareHands();
+                });
+                
+                const swordButton = document.createElement('button');
+                swordButton.className = 'battle-button';
+                swordButton.textContent = 'Использовать Меч-кладенец';
+                swordButton.addEventListener('click', () => {
+                    handleSecondMonsterSword();
+                });
+                
+                battleButtons.appendChild(bareHandsButton);
+                battleButtons.appendChild(swordButton);
+            } else if (monsterType === 'monster3') {
+                if (gameState.items.includes('sword')) {
+                    const bareHandsButton = document.createElement('button');
+                    bareHandsButton.className = 'battle-button';
+                    bareHandsButton.textContent = 'Биться голыми руками';
+                    bareHandsButton.addEventListener('click', () => {
+                        handleThirdMonsterAttack();
+                    });
+                    
+                    const swordButton = document.createElement('button');
+                    swordButton.className = 'battle-button';
+                    swordButton.textContent = 'Использовать Меч-кладенец';
+                    swordButton.addEventListener('click', () => {
+                        handleThirdMonsterAttack();
+                    });
+                    
+                    battleButtons.appendChild(bareHandsButton);
+                    battleButtons.appendChild(swordButton);
+                } else {
+                    const attackButton = document.createElement('button');
+                    attackButton.className = 'battle-button';
+                    attackButton.textContent = 'Бросить кубики, чтобы сразиться';
+                    attackButton.addEventListener('click', () => {
+                        handleThirdMonsterAttack();
+                    });
+                    battleButtons.appendChild(attackButton);
+                }
+            }
+        }
 
-/* applyLocationAction wrapper that also sets hints and triggers special sequenced events described in the scenario */
-function applyLocationAction(id, elRef){
-  applyLocationActionCore(id, elRef);
-}
+        // Обработка атаки на первого монстра
+        function handleFirstMonsterAttack() {
+            // Первый бросок
+            rollResult.style.display = 'block';
+            rollResult.textContent = 'результат бросков: 5 и 3.\nКажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!';
+            
+            // Показываем возможность использовать куколку
+            const dollCard = document.getElementById('item-doll');
+            if (dollCard) {
+                dollCard.style.pointerEvents = 'auto';
+                dollCard.addEventListener('click', useDollAgainstFirstMonster);
+            }
+        }
 
-function applyLocationActionCore(id, elRef){
-  // reuse previous function but also check for sequence-specific actions
-  applyLocationAction(id, elRef);
-}
+        // Использование куколки против первого монстра
+        function useDollAgainstFirstMonster() {
+            // Убираем результат броска
+            rollResult.style.display = 'none';
+            
+            // Убираем куколку
+            const dollCard = document.getElementById('item-doll');
+            if (dollCard) {
+                dollCard.style.opacity = '0';
+                setTimeout(() => {
+                    dollCard.remove();
+                    gameState.items = gameState.items.filter(item => item !== 'doll');
+                }, 500);
+            }
+            
+            // Второй бросок
+            setTimeout(() => {
+                rollResult.style.display = 'block';
+                rollResult.textContent = 'результат бросков: 5 и 5\nДругое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации «Получить оружие».';
+                
+                // Показываем меч-кладенец
+                setTimeout(() => {
+                    showItem('sword');
+                    
+                    // Обновляем подсказки
+                    hintRight.textContent = 'Доступные действия: выложить карты локаций';
+                    hintBottom.style.display = 'none';
+                    
+                    // Скрываем кнопки сражения
+                    battleButtons.style.display = 'none';
+                    
+                    // Обновляем состояние
+                    gameState.monster1Defeated = true;
+                }, 2000);
+            }, 500);
+        }
 
-/* helper: when using modal's "Вернуться к игре" closing, ensure right hint restored */
-modal.addEventListener('transitionend', ()=> {
-  // no-op
-});
+        // Обработка боя голыми руками со вторым монстром
+        function handleSecondMonsterBareHands() {
+            rollResult.style.display = 'block';
+            rollResult.textContent = 'результат бросков: 6 и 6.\nВау! Да вы опытный боец! Поспешим в путь! И вновь применяем эффект карты локации – за победу над монстром получите предмет. Хотя, наверное, такому силачу уже никакие предметы не нужны';
+            
+            // Показываем амулет
+            setTimeout(() => {
+                showItem('amulet');
+                
+                // Обновляем подсказки
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+                hintBottom.style.display = 'none';
+                
+                // Скрываем кнопки сражения
+                battleButtons.style.display = 'none';
+                
+                // Обновляем состояние
+                gameState.monster2Defeated = true;
+            }, 2000);
+        }
 
-/* initial render of item stack (empty) */
-renderItemStack();
+        // Обработка боя с мечом со вторым монстром
+        function handleSecondMonsterSword() {
+            // Убираем меч
+            const swordCard = document.getElementById('item-sword');
+            if (swordCard) {
+                swordCard.style.opacity = '0';
+                setTimeout(() => {
+                    swordCard.remove();
+                    gameState.items = gameState.items.filter(item => item !== 'sword');
+                }, 500);
+            }
+            
+            rollResult.style.display = 'block';
+            rollResult.textContent = 'результат бросков: 5 и 4.\nВсегда важно грамотно рассчитать силы. Хорошо, что у вас в ножнах оказалось такое оружие! И вновь применяем эффект карты локации – за победу над монстром получите предмет.';
+            
+            // Показываем амулет
+            setTimeout(() => {
+                showItem('amulet');
+                
+                // Обновляем подсказки
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+                hintBottom.style.display = 'none';
+                
+                // Скрываем кнопки сражения
+                battleButtons.style.display = 'none';
+                
+                // Обновляем состояние
+                gameState.monster2Defeated = true;
+            }, 2000);
+        }
 
-/* small UX: clicking outside modal does not close (to avoid accidental dismiss). close only by button. */
+        // Обработка атаки на третьего монстра
+        function handleThirdMonsterAttack() {
+            if (gameState.items.includes('sword')) {
+                rollResult.style.display = 'block';
+                rollResult.textContent = 'результат бросков: 2 и 1.\nНичего страшного! Каждый имеет право на маленькие неудачи. Иначе было бы не так захватывающе, верно? Используйте амулет, чтобы поскорее выбраться из этой скользкой ситуации';
+            } else {
+                rollResult.style.display = 'block';
+                rollResult.textContent = 'Результат броска – 3 и 3.\nНеплохо, но против такого чудовища недостаточно. Скорее используйте свой амулет, чтобы сбежать.';
+            }
+            
+            // Показываем возможность использовать амулет
+            const amuletCard = document.getElementById('item-amulet');
+            if (amuletCard) {
+                amuletCard.style.pointerEvents = 'auto';
+                amuletCard.addEventListener('click', useAmuletToEscape);
+            }
+        }
 
-/* ======= EXTRA: expose some debug functions on window for quick testing (optional) ======= */
-window._state = state;
-window._reveal = revealLocationAtDirection;
-window._giveItem = (id)=> { giveItem(id); renderItemStack(); };
+        // Использование амулета для побега
+        function useAmuletToEscape() {
+            // Убираем результат броска
+            rollResult.style.display = 'none';
+            
+            // Убираем амулет
+            const amuletCard = document.getElementById('item-amulet');
+            if (amuletCard) {
+                amuletCard.style.opacity = '0';
+                setTimeout(() => {
+                    amuletCard.remove();
+                    gameState.items = gameState.items.filter(item => item !== 'amulet');
+                }, 500);
+            }
+            
+            // Показываем подсказку для выбора направления
+            hintBottom.style.display = 'block';
+            hintBottom.textContent = 'Доступные действия: выбрать карту направления';
+            
+            // Скрываем кнопки сражения
+            battleButtons.style.display = 'none';
+            
+            // Обновляем состояние
+            gameState.monster3Defeated = true;
+        }
 
-/* End of script */
-</script>
+        // Показать локацию "команда"
+        function showTeamLocation() {
+            modalTitle.textContent = 'Команда';
+            modalText.textContent = 'На этой локации применяется эффект: «завершить сюжетную арку «знакомство». Мы – KRAW Studio. Группа инициативных любителей настольных игр (и не только). И да, мы достаточно амбициозны (или безумны), чтобы параллельно работать над компьютерной версией той же игровой вселенной. Мы верим в силу трансмедийности и хотим, чтобы наши игроки могли погрузиться в мир игры с любой стороны. Наша команда: Настольная игра: Анастасия Оглы, Павел Алексеев — гейм-дизайнеры. Александра Юрченко и Олеся Кан — графические дизайнеры. Александра Волкова — нарративный дизайнер. Компьютерная игра: Максим Усачев — автор идеи, разработчик. Никита Старков — саунд-дизайнер. Дарья Горбунова — левел-дизайнер. Рады познакомиться и надеемся, что вам было с нами весело! Предлагаем и дальше веселиться рука об руку, разрабатывая эту настольную игру! Наши контакты: Почта: мяумяу. Наши тг: гав гав';
+            modal.classList.add('active');
+            
+            // Обновляем подсказки
+            hintRight.style.display = 'none';
+            hintBottom.style.display = 'none';
+        }
+
+        // Обновить трекер локации
+        function updateLocationTracker(location) {
+            const locationNames = {
+                'start': 'Стартовая локация',
+                'about': 'Об игре',
+                'monster1': 'Встреча с первым монстром',
+                'purpose': 'Для кого и зачем',
+                'monster2': 'Встреча со вторым монстром',
+                'coop': 'Сотрудничество',
+                'monster3': 'Встреча с третьим монстром',
+                'team': 'Команда'
+            };
+            
+            locationTracker.textContent = `Текущая локация: ${locationNames[location]}`;
+            locationTracker.style.display = 'block';
+        }
+
+        // Размещение карт локаций вокруг определенной карты
+        function placeLocationCardsAround(locationType) {
+            // Создаем 4 карты локаций вокруг текущей локации
+            const positions = [
+                { left: '50%', top: '30%', transform: 'translate(-50%, -50%)' }, // сверху
+                { left: '70%', top: '50%', transform: 'translate(-50%, -50%)' }, // справа
+                { left: '50%', top: '70%', transform: 'translate(-50%, -50%)' }, // снизу
+                { left: '30%', top: '50%', transform: 'translate(-50%, -50%)' }  // слева
+            ];
+            
+            positions.forEach((pos, index) => {
+                const locationCard = document.createElement('div');
+                locationCard.className = 'card location-card';
+                locationCard.style.backgroundImage = 'url("back.png")';
+                locationCard.style.left = pos.left;
+                locationCard.style.top = pos.top;
+                locationCard.style.transform = pos.transform;
+                locationCard.style.opacity = '0';
+                locationCard.dataset.position = index;
+                
+                // Определяем, какая локация будет открыта при клике
+                let targetLocation;
+                switch(locationType) {
+                    case 'about':
+                        targetLocation = 'monster1';
+                        break;
+                    case 'monster1':
+                        targetLocation = 'purpose';
+                        break;
+                    case 'purpose':
+                        targetLocation = 'monster2';
+                        break;
+                    case 'monster2':
+                        targetLocation = 'coop';
+                        break;
+                    case 'coop':
+                        targetLocation = 'monster3';
+                        break;
+                    case 'monster3':
+                        targetLocation = 'team';
+                        break;
+                }
+                
+                locationCard.dataset.location = targetLocation;
+                document.querySelector('.game-container').appendChild(locationCard);
+                
+                // Анимация появления
+                setTimeout(() => {
+                    locationCard.style.opacity = '1';
+                }, index * 200);
+                
+                // Обработчик клика
+                locationCard.addEventListener('click', () => {
+                    if (locationCard.style.backgroundImage.includes('back.png')) {
+                        revealLocationCard(locationCard);
+                    }
+                });
+            });
+            
+            // Показываем подсказку
+            hintBottom.style.display = 'block';
+            hintBottom.textContent = 'Доступные действия: выбрать направление';
+        }
+
+        // Открыть карту локации
+        function revealLocationCard(card) {
+            const locationType = card.dataset.location;
+            card.style.backgroundImage = `url("card-${locationType}.png")`;
+            
+            // Обновляем трекер локации
+            updateLocationTracker(locationType);
+            
+            // Обновляем состояние игры
+            gameState.currentLocation = locationType;
+            
+            // Добавляем обработчик клика в зависимости от типа локации
+            if (locationType === 'about' || locationType === 'purpose' || locationType === 'coop' || locationType === 'team') {
+                card.addEventListener('click', () => {
+                    showLocationEffect(locationType);
+                });
+                
+                // Показываем подсказку
+                hintBottom.style.display = 'block';
+                hintBottom.textContent = 'Доступные действия: применить эффект локации';
+            } else if (locationType.includes('monster')) {
+                card.addEventListener('click', () => {
+                    showMonsterBattle(locationType);
+                });
+                
+                // Показываем подсказку для монстра
+                setTimeout(() => {
+                    hintBottom.style.display = 'block';
+                    if (locationType === 'monster1') {
+                        hintBottom.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
+                    } else if (locationType === 'monster2') {
+                        hintBottom.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
+                    } else if (locationType === 'monster3') {
+                        hintBottom.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
+                    }
+                }, 1000);
+            }
+            
+            // Обновляем фазу игры
+            if (locationType === 'about') {
+                gameState.phase = 'afterAbout';
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+            } else if (locationType === 'monster1') {
+                gameState.phase = 'afterMonster1';
+            } else if (locationType === 'purpose') {
+                gameState.phase = 'afterPurpose';
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+            } else if (locationType === 'monster2') {
+                gameState.phase = 'afterMonster2';
+            } else if (locationType === 'coop') {
+                gameState.phase = 'afterCoop';
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+            } else if (locationType === 'monster3') {
+                gameState.phase = 'afterMonster3';
+            } else if (locationType === 'team') {
+                // Конец игры
+                showTeamLocation();
+            }
+        }
+
+        // Инициализация игры
+        function initGame() {
+            // Показываем трекер локации
+            updateLocationTracker('start');
+        }
+
+        // Запуск инициализации при загрузке страницы
+        window.addEventListener('load', initGame);
+    </script>
 </body>
 </html>
