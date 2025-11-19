@@ -105,6 +105,7 @@
             z-index: 10;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            white-space: pre-line;
         }
         
         .hint-right {
@@ -251,6 +252,7 @@
             max-width: 500px;
             z-index: 10;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            white-space: pre-line;
         }
         
         /* Скрытые карты */
@@ -304,7 +306,7 @@
             transform: translate(-50%, -50%);
             width: 660px;
             height: 660px;
-            display: grid;
+            display: none;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
             gap: 10px;
@@ -314,6 +316,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+        
+        .grid-cell .card {
+            position: relative;
         }
     </style>
 </head>
@@ -351,7 +357,7 @@
         <div class="battle-buttons" id="battle-buttons" style="display: none;"></div>
         
         <!-- Контейнер для карт локаций -->
-        <div class="location-grid" id="location-grid" style="display: none;"></div>
+        <div class="location-grid" id="location-grid"></div>
     </div>
 
     <script>
@@ -468,9 +474,9 @@
                 }, 500);
                 
                 // Обновляем подсказки
-                hintRight.innerHTML = 'Доступные действия:<br>&lt;&lt;&lt; Выложить новые карты локаций';
+                hintRight.innerHTML = 'Доступные действия:\n&lt;&lt;&lt; Выложить новые карты локаций';
                 hintBottom.style.display = 'block';
-                hintBottom.innerHTML = 'Эффект: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
+                hintBottom.innerHTML = 'Эффект: начать игру на знакомство\nПолученные предметы: куколка-оберег';
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
