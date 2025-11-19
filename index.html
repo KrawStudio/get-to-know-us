@@ -83,11 +83,9 @@
             height: 220px;
         }
         
-        /* Колода в левом нижнем углу */
+        /* Колода в центре или левом нижнем углу */
         .deck {
             position: absolute;
-            left: 20px;
-            bottom: 20px;
             width: 220px;
             height: 220px;
             background-image: url('assets/back.png');
@@ -96,6 +94,17 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
             cursor: pointer;
             z-index: 5;
+            /* Изначально по центру */
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .deck.in-corner {
+            left: 20px;
+            bottom: 20px;
+            top: auto;
+            transform: translate(0, 0);
         }
         
         /* Подсказки */
@@ -119,6 +128,13 @@
             cursor: pointer;
             font-size: 20px;
             color: #fff;
+        }
+        
+        /* Подсказка справа от колоды в центре */
+        .hint-right-center {
+            left: calc(50% + 130px);
+            top: 50%;
+            transform: translateY(-50%);
         }
         
         /* Подсказка справа от колоды в левом нижнем углу */
@@ -317,6 +333,28 @@
             top: 70%;
             z-index: 101;
         }
+        
+        /* Карта предмета в бою */
+        .battle-item-card {
+            position: absolute;
+            width: 150px;
+            height: 220px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 101;
+            left: 50%;
+            top: 75%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .battle-item-card.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -331,7 +369,11 @@
         <div class="deck" id="deck"></div>
         
         <!-- Подсказки -->
-        <div class="hint hint-right-deck" id="hint-right-deck">
+        <div class="hint hint-right-center" id="hint-right-center">
+            <span class="hint-close" onclick="closeHint('hint-right-center')">×</span>
+            Доступные действия: Выложить карту стартовой локации
+        </div>
+        <div class="hint hint-right-deck" id="hint-right-deck" style="display: none;">
             <span class="hint-close" onclick="closeHint('hint-right-deck')">×</span>
             Доступные действия: <<< Выложить новые карты локаций
         </div>
@@ -375,6 +417,7 @@
 
         // DOM элементы
         const deck = document.getElementById('deck');
+        const hintRightCenter = document.getElementById('hint-right-center');
         const hintRightDeck = document.getElementById('hint-right-deck');
         const hintBottom = document.getElementById('hint-bottom');
         const hintBottomText = document.getElementById('hint-bottom-text');
@@ -397,6 +440,8 @@
             showHintRightDeck();
             // Возвращаем карты предметов в исходное состояние
             resetItemCardsPosition();
+            // Удаляем карту предмета из боя, если она есть
+            removeBattleItemCard();
         });
 
         // Функция закрытия подсказки
@@ -404,7 +449,7 @@
             document.getElementById(hintId).style.display = 'none';
         }
 
-        // Показать подсказку справа от колоды
+        // Показать подсказку справа от колоды (в левом нижнем углу)
         function showHintRightDeck() {
             hintRightDeck.style.display = 'block';
         }
@@ -426,8 +471,8 @@
 
         // Функция обработки клика на колоду
         function handleDeckClick() {
-            // Скрываем подсказку справа от колоды при нажатии на колоду
-            hideHintRightDeck();
+            // Скрываем подсказку справа от колоды в центре при нажатии на колоду
+            hideHintRightCenter();
             // Скрываем подсказку снизу с эффектами локации
             hideHintBottom();
             // Скрываем подсказку активной карты
@@ -461,13 +506,15 @@
             }
         }
 
+        // Скрыть подсказку справа от колоды в центре
+        function hideHintRightCenter() {
+            hintRightCenter.style.display = 'none';
+        }
+
         // Начало игры
         function startGame() {
             // Перемещаем колоду в левый нижний угол
-            deck.style.left = '20px';
-            deck.style.bottom = '20px';
-            deck.style.top = 'auto';
-            deck.style.transform = 'translate(0, 0)';
+            deck.classList.add('in-corner');
             
             // Обновляем заголовки
             setTimeout(() => {
@@ -524,7 +571,7 @@
                     showItem('doll');
                 }, 500);
                 
-                // Показываем подсказку справа от колоды
+                // Показываем подсказку справа от колоды в левом нижнем углу
                 showHintRightDeck();
                 
                 // Сохраняем текущую локацию
@@ -672,7 +719,7 @@
             }
             
             const cardSize = 220 * gameState.cardScale;
-            const spacing = 15 * gameState.cardScale; // Уменьшили расстояние между картами до 15px
+            const spacing = 5 * gameState.cardScale; // Уменьшили расстояние между картами до 5px
             
             // Центрируем сетку на экране
             const totalWidth = gridWidth * (cardSize + spacing) - spacing;
@@ -852,6 +899,30 @@
                     card.style.transform = 'translate(-50%, -50%)';
                 }
             });
+        }
+
+        // Создать карту предмета для боя
+        function createBattleItemCard(itemType) {
+            const battleItemCard = document.createElement('div');
+            battleItemCard.className = 'battle-item-card';
+            battleItemCard.style.backgroundImage = `url("assets/item-${itemType}.png")`;
+            battleItemCard.id = 'battle-item-card';
+            document.querySelector('.game-container').appendChild(battleItemCard);
+            
+            // Показываем карту с анимацией
+            setTimeout(() => {
+                battleItemCard.classList.add('show');
+            }, 100);
+            
+            return battleItemCard;
+        }
+
+        // Удалить карту предмета из боя
+        function removeBattleItemCard() {
+            const battleItemCard = document.getElementById('battle-item-card');
+            if (battleItemCard) {
+                battleItemCard.remove();
+            }
         }
 
         // Обработка клика на карту направления
@@ -1196,8 +1267,11 @@
             rollResult.style.display = 'block';
             rollResult.textContent = 'результат бросков: 5 и 3.\nКажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!';
             
+            // Создаем карту предмета для боя
+            createBattleItemCard('doll');
+            
             // Показываем возможность использовать куколку
-            const dollCard = document.getElementById('item-doll');
+            const dollCard = document.getElementById('battle-item-card');
             if (dollCard) {
                 // Добавляем обработчик для куколки
                 dollCard.onclick = function() {
@@ -1211,7 +1285,10 @@
             // Убираем результат броска
             rollResult.style.display = 'none';
             
-            // Убираем куколку
+            // Убираем куколку из боя
+            removeBattleItemCard();
+            
+            // Убираем куколку из инвентаря
             const dollCard = document.getElementById('item-doll');
             if (dollCard) {
                 dollCard.style.opacity = '0';
@@ -1284,8 +1361,11 @@
                 rollResult.textContent = 'Результат броска – 3 и 3.\nНеплохо, но против такого чудовища недостаточно. Скорее используйте свой амулет, чтобы сбежать.';
             }
             
+            // Создаем карту предмета для боя
+            createBattleItemCard('amulet');
+            
             // Показываем возможность использовать амулет
-            const amuletCard = document.getElementById('item-amulet');
+            const amuletCard = document.getElementById('battle-item-card');
             if (amuletCard) {
                 // Добавляем обработчик для амулета
                 amuletCard.onclick = function() {
@@ -1299,7 +1379,10 @@
             // Убираем результат броска
             rollResult.style.display = 'none';
             
-            // Убираем амулет
+            // Убираем амулет из боя
+            removeBattleItemCard();
+            
+            // Убираем амулет из инвентаря
             const amuletCard = document.getElementById('item-amulet');
             if (amuletCard) {
                 amuletCard.style.opacity = '0';
@@ -1351,7 +1434,8 @@
 
         // Запуск инициализации при загрузке страницы
         window.addEventListener('load', () => {
-            // Инициализация не требуется, игра начинается с колодой в центре
+            // Изначально показываем подсказку справа от колоды в центре
+            hintRightCenter.style.display = 'block';
         });
     </script>
 </body>
