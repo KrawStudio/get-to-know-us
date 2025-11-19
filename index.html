@@ -257,6 +257,12 @@
             background-color: #a0522d;
         }
         
+        .modal button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
         /* Кнопки сражения внутри модального окна */
         .battle-buttons {
             display: flex;
@@ -279,6 +285,12 @@
         
         .battle-button:hover {
             background-color: rgba(160, 82, 45, 0.9);
+        }
+        
+        .battle-button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
         
         /* Результат броска внутри модального окна */
@@ -324,16 +336,6 @@
             transform: rotate(-90deg) translateX(90%) translateY(-30px); /* Выдвигается только вверх */
         }
         
-        /* Стиль для карточек предметов во время боя */
-        .item-card.battle-mode {
-            transform: rotate(0deg) !important;
-            transition: all 0.5s ease;
-            right: auto;
-            left: 50%;
-            top: 70%;
-            z-index: 101;
-        }
-        
         /* Карта предмета в бою */
         .battle-item-card {
             position: absolute;
@@ -350,6 +352,7 @@
             transform: translate(-50%, -50%);
             opacity: 0;
             transition: opacity 0.5s ease;
+            cursor: pointer;
         }
         
         .battle-item-card.show {
@@ -412,7 +415,11 @@
             locationHistory: [],
             cardScale: 1.0,
             allLocations: [], // Массив всех карт локаций для управления масштабированием
-            activeCardHint: null // Подсказка для активной карты
+            activeCardHint: null, // Подсказка для активной карты
+            battleState: {
+                firstRollDone: false,
+                dollUsed: false
+            }
         };
 
         // DOM элементы
@@ -442,6 +449,9 @@
             resetItemCardsPosition();
             // Удаляем карту предмета из боя, если она есть
             removeBattleItemCard();
+            // Сбрасываем состояние боя
+            gameState.battleState.firstRollDone = false;
+            gameState.battleState.dollUsed = false;
         });
 
         // Функция закрытия подсказки
@@ -473,6 +483,8 @@
         function handleDeckClick() {
             // Скрываем подсказку справа от колоды в центре при нажатии на колоду
             hideHintRightCenter();
+            // Скрываем подсказку справа от колоды в углу
+            hideHintRightDeck();
             // Скрываем подсказку снизу с эффектами локации
             hideHintBottom();
             // Скрываем подсказку активной карты
@@ -570,9 +582,6 @@
                 setTimeout(() => {
                     showItem('doll');
                 }, 500);
-                
-                // Показываем подсказку справа от колоды в левом нижнем углу
-                showHintRightDeck();
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
@@ -719,7 +728,7 @@
             }
             
             const cardSize = 220 * gameState.cardScale;
-            const spacing = 5 * gameState.cardScale; // Уменьшили расстояние между картами до 5px
+            const spacing = 0; // Карты вплотную друг к другу
             
             // Центрируем сетку на экране
             const totalWidth = gridWidth * (cardSize + spacing) - spacing;
@@ -877,11 +886,7 @@
         function setupItemCardsForBattle() {
             const itemCards = document.querySelectorAll('.item-card');
             itemCards.forEach(card => {
-                card.classList.add('battle-mode');
-                // Убираем поворот для куколки
-                if (card.id === 'item-doll') {
-                    card.style.transform = 'translate(-50%, -50%)';
-                }
+                card.style.opacity = '0.3'; // Делаем карты полупрозрачными во время боя
             });
         }
 
@@ -889,7 +894,7 @@
         function resetItemCardsPosition() {
             const itemCards = document.querySelectorAll('.item-card');
             itemCards.forEach(card => {
-                card.classList.remove('battle-mode');
+                card.style.opacity = '1'; // Возвращаем нормальную прозрачность
                 // Возвращаем поворот для куколки
                 if (card.id === 'item-doll') {
                     card.style.transform = 'rotate(-90deg) translateX(90%)';
@@ -1207,7 +1212,7 @@
             if (monsterType === 'monster1') {
                 const attackButton = document.createElement('button');
                 attackButton.className = 'battle-button';
-                attackButton.textContent = 'бросить кубики, чтобы атаковать';
+                attackButton.textContent = 'Бросить кубики, чтобы атаковать';
                 attackButton.addEventListener('click', () => {
                     handleFirstMonsterAttack();
                 });
@@ -1263,28 +1268,29 @@
 
         // Обработка атаки на первого монстра
         function handleFirstMonsterAttack() {
+            // Делаем кнопку неактивной
+            const attackButton = battleButtons.querySelector('.battle-button');
+            if (attackButton) {
+                attackButton.disabled = true;
+            }
+            
             // Первый бросок
             rollResult.style.display = 'block';
-            rollResult.textContent = 'результат бросков: 5 и 3.\nКажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!';
+            rollResult.textContent = 'Результат бросков: 5 и 3. Кажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!';
             
             // Создаем карту предмета для боя
-            createBattleItemCard('doll');
+            const dollCard = createBattleItemCard('doll');
             
-            // Показываем возможность использовать куколку
-            const dollCard = document.getElementById('battle-item-card');
-            if (dollCard) {
-                // Добавляем обработчик для куколки
-                dollCard.onclick = function() {
-                    useDollAgainstFirstMonster();
-                };
-            }
+            // Добавляем обработчик для куколки
+            dollCard.onclick = function() {
+                useDollAgainstFirstMonster();
+            };
+            
+            gameState.battleState.firstRollDone = true;
         }
 
         // Использование куколки против первого монстра
         function useDollAgainstFirstMonster() {
-            // Убираем результат броска
-            rollResult.style.display = 'none';
-            
             // Убираем куколку из боя
             removeBattleItemCard();
             
@@ -1298,19 +1304,45 @@
                 }, 500);
             }
             
+            // Очищаем кнопки и добавляем кнопку "Атаковать еще раз"
+            battleButtons.innerHTML = '';
+            const attackAgainButton = document.createElement('button');
+            attackAgainButton.className = 'battle-button';
+            attackAgainButton.textContent = 'Атаковать еще раз';
+            attackAgainButton.addEventListener('click', () => {
+                handleFirstMonsterSecondAttack();
+            });
+            battleButtons.appendChild(attackAgainButton);
+            
+            // Обновляем результат броска
+            rollResult.textContent = 'Куколка-оберег использована! Теперь попробуйте атаковать еще раз.';
+            
+            gameState.battleState.dollUsed = true;
+        }
+
+        // Вторая атака на первого монстра
+        function handleFirstMonsterSecondAttack() {
+            // Делаем кнопку неактивной
+            const attackAgainButton = battleButtons.querySelector('.battle-button');
+            if (attackAgainButton) {
+                attackAgainButton.disabled = true;
+            }
+            
             // Второй бросок
+            rollResult.textContent = 'Результат бросков: 5 и 5. Другое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации «Получить оружие».';
+            
+            // Показываем меч-кладенец
             setTimeout(() => {
-                rollResult.style.display = 'block';
-                rollResult.textContent = 'результат бросков: 5 и 5\nДругое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации «Получить оружие».';
+                const swordCard = createBattleItemCard('sword');
                 
-                // Показываем меч-кладенец
+                // Обновляем состояние
+                gameState.monster1Defeated = true;
+                
+                // Через некоторое время показываем кнопку "Вернуться в игру"
                 setTimeout(() => {
-                    showItem('sword');
-                    
-                    // Обновляем состояние
-                    gameState.monster1Defeated = true;
+                    modalClose.style.display = 'block';
                 }, 2000);
-            }, 500);
+            }, 1000);
         }
 
         // Обработка боя голыми руками со вторым монстром
@@ -1362,16 +1394,12 @@
             }
             
             // Создаем карту предмета для боя
-            createBattleItemCard('amulet');
+            const amuletCard = createBattleItemCard('amulet');
             
             // Показываем возможность использовать амулет
-            const amuletCard = document.getElementById('battle-item-card');
-            if (amuletCard) {
-                // Добавляем обработчик для амулета
-                amuletCard.onclick = function() {
-                    useAmuletToEscape();
-                };
-            }
+            amuletCard.onclick = function() {
+                useAmuletToEscape();
+            };
         }
 
         // Использование амулета для побега
