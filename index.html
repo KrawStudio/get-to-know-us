@@ -83,12 +83,11 @@
             height: 220px;
         }
         
-        /* Колода - начальное положение в центре */
+        /* Колода в левом нижнем углу */
         .deck {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            left: 20px;
+            bottom: 20px;
             width: 220px;
             height: 220px;
             background-image: url('assets/back.png');
@@ -97,7 +96,6 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
             cursor: pointer;
             z-index: 5;
-            transition: all 0.8s ease;
         }
         
         /* Подсказки */
@@ -123,10 +121,12 @@
             color: #fff;
         }
         
-        .hint-right {
-            left: calc(50% + 120px); /* Справа от колоды в центре */
-            top: 50%;
-            transform: translateY(-50%);
+        /* Подсказка справа от колоды в левом нижнем углу */
+        .hint-right-deck {
+            left: 250px; /* 20px (отступ колоды) + 220px (ширина колоды) + 10px (доп. отступ) */
+            bottom: 20px;
+            top: auto;
+            transform: none;
         }
         
         .hint-bottom {
@@ -139,6 +139,21 @@
         }
         
         .hint-under-card {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            max-width: 300px;
+            line-height: 1.5;
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        
+        /* Подсказка рядом с активной картой */
+        .hint-active-card {
             position: absolute;
             background-color: rgba(0, 0, 0, 0.8);
             padding: 15px 20px;
@@ -268,7 +283,7 @@
         }
         
         .hidden-direction:hover {
-            transform: translateY(75%); /* При наведении выдвигаются сильнее */
+            transform: translateY(50%); /* При наведении выдвигаются сильнее (примерно на 40px выше) */
         }
         
         /* Анимации */
@@ -292,6 +307,16 @@
         #item-doll:hover {
             transform: rotate(-90deg) translateX(90%) translateY(-30px); /* Выдвигается только вверх */
         }
+        
+        /* Стиль для карточек предметов во время боя */
+        .item-card.battle-mode {
+            transform: rotate(0deg) !important;
+            transition: all 0.5s ease;
+            right: auto;
+            left: 50%;
+            top: 70%;
+            z-index: 101;
+        }
     </style>
 </head>
 <body>
@@ -306,9 +331,9 @@
         <div class="deck" id="deck"></div>
         
         <!-- Подсказки -->
-        <div class="hint hint-right" id="hint-right">
-            <span class="hint-close" onclick="closeHint('hint-right')">×</span>
-            <<< Выложить стартовую локацию
+        <div class="hint hint-right-deck" id="hint-right-deck">
+            <span class="hint-close" onclick="closeHint('hint-right-deck')">×</span>
+            Доступные действия: <<< Выложить новые карты локаций
         </div>
         <div class="hint hint-bottom" id="hint-bottom" style="display: none;">
             <span class="hint-close" onclick="closeHint('hint-bottom')">×</span>
@@ -344,12 +369,13 @@
             currentPosition: { x: 0, y: 0 },
             locationHistory: [],
             cardScale: 1.0,
-            allLocations: [] // Массив всех карт локаций для управления масштабированием
+            allLocations: [], // Массив всех карт локаций для управления масштабированием
+            activeCardHint: null // Подсказка для активной карты
         };
 
         // DOM элементы
         const deck = document.getElementById('deck');
-        const hintRight = document.getElementById('hint-right');
+        const hintRightDeck = document.getElementById('hint-right-deck');
         const hintBottom = document.getElementById('hint-bottom');
         const hintBottomText = document.getElementById('hint-bottom-text');
         const modal = document.getElementById('modal');
@@ -367,8 +393,10 @@
         // Обработчик закрытия модального окна
         modalClose.addEventListener('click', () => {
             modal.classList.remove('active');
-            // После закрытия модального окна показываем подсказку справа
-            showHintRight();
+            // После закрытия модального окна показываем подсказку справа от колоды
+            showHintRightDeck();
+            // Возвращаем карты предметов в исходное состояние
+            resetItemCardsPosition();
         });
 
         // Функция закрытия подсказки
@@ -376,21 +404,14 @@
             document.getElementById(hintId).style.display = 'none';
         }
 
-        // Показать подсказку справа
-        function showHintRight() {
-            hintRight.style.display = 'block';
-            // Обновляем текст подсказки в зависимости от фазы игры
-            if (gameState.phase === 'afterStart' || gameState.phase === 'afterAbout' || 
-                gameState.phase === 'afterMonster1' || gameState.phase === 'afterPurpose' ||
-                gameState.phase === 'afterMonster2' || gameState.phase === 'afterCoop' ||
-                gameState.phase === 'afterMonster3') {
-                hintRight.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-right\')">×</span>Доступные действия: <<< Выложить новые карты локаций';
-            }
+        // Показать подсказку справа от колоды
+        function showHintRightDeck() {
+            hintRightDeck.style.display = 'block';
         }
 
-        // Скрыть подсказку справа
-        function hideHintRight() {
-            hintRight.style.display = 'none';
+        // Скрыть подсказку справа от колоды
+        function hideHintRightDeck() {
+            hintRightDeck.style.display = 'none';
         }
 
         // Показать подсказку снизу
@@ -405,10 +426,12 @@
 
         // Функция обработки клика на колоду
         function handleDeckClick() {
-            // Скрываем подсказку справа при нажатии на колоду
-            hideHintRight();
+            // Скрываем подсказку справа от колоды при нажатии на колоду
+            hideHintRightDeck();
             // Скрываем подсказку снизу с эффектами локации
             hideHintBottom();
+            // Скрываем подсказку активной карты
+            hideActiveCardHint();
 
             switch(gameState.phase) {
                 case 'start':
@@ -502,8 +525,7 @@
                 }, 500);
                 
                 // Показываем подсказку справа от колоды
-                showHintRight();
-                hintRight.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-right\')">×</span>Доступные действия: <<< Выложить новые карты локаций';
+                showHintRightDeck();
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
@@ -650,7 +672,7 @@
             }
             
             const cardSize = 220 * gameState.cardScale;
-            const spacing = 20 * gameState.cardScale;
+            const spacing = 15 * gameState.cardScale; // Уменьшили расстояние между картами до 15px
             
             // Центрируем сетку на экране
             const totalWidth = gridWidth * (cardSize + spacing) - spacing;
@@ -671,10 +693,61 @@
                 loc.element.style.top = `${top}%`;
                 loc.element.style.transform = 'translate(-50%, -50%)';
             });
+            
+            // Проверяем и корректируем позиции карт, чтобы они не пересекались с другими элементами
+            checkCardPositions();
+        }
+
+        // Проверить и скорректировать позиции карт
+        function checkCardPositions() {
+            const locationCards = document.querySelectorAll('.location-card');
+            const directionCards = document.querySelectorAll('.direction-card');
+            const itemCards = document.querySelectorAll('.item-card');
+            
+            // Проверяем пересечения карт локаций с картами направлений
+            locationCards.forEach(locCard => {
+                const locRect = locCard.getBoundingClientRect();
+                
+                directionCards.forEach(dirCard => {
+                    const dirRect = dirCard.getBoundingClientRect();
+                    
+                    // Если есть пересечение, немного сдвигаем карту направлений
+                    if (isOverlapping(locRect, dirRect)) {
+                        dirCard.style.bottom = '15%';
+                    }
+                });
+                
+                // Проверяем пересечения с картами предметов
+                itemCards.forEach(itemCard => {
+                    const itemRect = itemCard.getBoundingClientRect();
+                    
+                    if (isOverlapping(locRect, itemRect)) {
+                        // Сдвигаем карту предмета вправо
+                        if (itemCard.id === 'item-doll') {
+                            itemCard.style.transform = 'rotate(-90deg) translateX(95%)';
+                        } else {
+                            itemCard.style.left = '65%';
+                        }
+                    }
+                });
+            });
+        }
+
+        // Проверить пересечение двух прямоугольников
+        function isOverlapping(rect1, rect2) {
+            return !(
+                rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom
+            );
         }
 
         // Показать карты направлений
         function showDirectionCards() {
+            // Удаляем старые карты направлений
+            document.querySelectorAll('.direction-card').forEach(card => card.remove());
+            
             const directions = ['up', 'right', 'down', 'left'];
             const positions = [
                 { left: '35%', bottom: '5%' },
@@ -698,6 +771,86 @@
                     hideHintBottom();
                     handleDirectionClick(dir);
                 });
+            });
+        }
+
+        // Создать подсказку для активной карты
+        function createActiveCardHint(cardElement) {
+            // Удаляем старую подсказку, если есть
+            hideActiveCardHint();
+            
+            const cardRect = cardElement.getBoundingClientRect();
+            const hint = document.createElement('div');
+            hint.className = 'hint-active-card';
+            hint.innerHTML = 'Доступные действия: Применить эффект локации';
+            hint.id = 'hint-active-card';
+            
+            // Определяем позицию подсказки относительно карты
+            const cardTop = cardRect.top;
+            const cardBottom = cardRect.bottom;
+            const cardLeft = cardRect.left;
+            const cardRight = cardRect.right;
+            const windowHeight = window.innerHeight;
+            
+            // Если карта в верхней или нижней части экрана - показываем подсказку справа
+            if (cardTop < windowHeight * 0.2 || cardBottom > windowHeight * 0.8) {
+                hint.style.left = `${cardRight + 10}px`;
+                hint.style.top = `${cardTop}px`;
+                hint.style.transform = 'translateY(0)';
+            } 
+            // Если карта в средней части экрана - показываем подсказку снизу
+            else {
+                hint.style.left = `${cardLeft}px`;
+                hint.style.top = `${cardBottom + 10}px`;
+                hint.style.transform = 'translateX(0)';
+            }
+            
+            document.querySelector('.game-container').appendChild(hint);
+            gameState.activeCardHint = hint;
+            
+            // Добавляем обработчик для скрытия подсказки при клике на карту
+            const originalClickHandler = cardElement.onclick;
+            cardElement.onclick = function(event) {
+                hideActiveCardHint();
+                if (originalClickHandler) {
+                    originalClickHandler.call(this, event);
+                }
+            };
+        }
+
+        // Скрыть подсказку активной карты
+        function hideActiveCardHint() {
+            if (gameState.activeCardHint) {
+                gameState.activeCardHint.remove();
+                gameState.activeCardHint = null;
+            }
+        }
+
+        // Изменить позицию карт предметов для боя
+        function setupItemCardsForBattle() {
+            const itemCards = document.querySelectorAll('.item-card');
+            itemCards.forEach(card => {
+                card.classList.add('battle-mode');
+                // Убираем поворот для куколки
+                if (card.id === 'item-doll') {
+                    card.style.transform = 'translate(-50%, -50%)';
+                }
+            });
+        }
+
+        // Вернуть карты предметов в исходное положение
+        function resetItemCardsPosition() {
+            const itemCards = document.querySelectorAll('.item-card');
+            itemCards.forEach(card => {
+                card.classList.remove('battle-mode');
+                // Возвращаем поворот для куколки
+                if (card.id === 'item-doll') {
+                    card.style.transform = 'rotate(-90deg) translateX(90%)';
+                } else {
+                    card.style.left = '60%';
+                    card.style.top = '50%';
+                    card.style.transform = 'translate(-50%, -50%)';
+                }
             });
         }
 
@@ -737,14 +890,12 @@
                     const newActiveCard = document.querySelector(`.location-card[data-x="${newX}"][data-y="${newY}"]`);
                     if (newActiveCard) {
                         newActiveCard.classList.add('active');
+                        // Создаем подсказку для активной карты
+                        createActiveCardHint(newActiveCard);
                     }
                     
                     gameState.currentPosition = { x: newX, y: newY };
                     gameState.currentLocation = gameState.locationGrid[newPositionKey];
-                    
-                    // Показываем подсказку
-                    hintBottom.style.display = 'block';
-                    hintBottomText.textContent = 'Доступные действия: выбрать карту направления';
                     
                     // Обновляем фазу игры
                     updateGamePhase();
@@ -802,6 +953,8 @@
                 
                 // Добавляем подсветку на новую активную карту
                 locationCard.classList.add('active');
+                // Создаем подсказку для активной карты
+                createActiveCardHint(locationCard);
                 
                 // Обновляем состояние игры
                 gameState.locationGrid[positionKey] = locationType;
@@ -819,26 +972,10 @@
                     locationCard.addEventListener('click', () => {
                         showLocationEffect(locationType);
                     });
-                    
-                    // Показываем подсказку
-                    hintBottom.style.display = 'block';
-                    hintBottomText.textContent = 'Доступные действия: Применить эффект локации';
                 } else if (locationType.includes('monster')) {
                     locationCard.addEventListener('click', () => {
                         showMonsterBattle(locationType);
                     });
-                    
-                    // Показываем подсказку для монстра
-                    setTimeout(() => {
-                        hintBottom.style.display = 'block';
-                        if (locationType === 'monster1') {
-                            hintBottomText.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
-                        } else if (locationType === 'monster2') {
-                            hintBottomText.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
-                        } else if (locationType === 'monster3') {
-                            hintBottomText.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
-                        }
-                    }, 1000);
                 }
                 
                 // Обновляем фазу игры
@@ -955,7 +1092,7 @@
                         Мы хотим работать с профессионалами, которые помогут нам вывести игру на рынок и поддержать нас на этапах производстве продукции и дистрибуции.</p>
                         
                         <p><strong>Партнёрство в маркетинге и продвижении.</strong><br>
-                        Мы верим в наш продукт и готовы вкладывать силы, но нам нужна ваша мощь и опыт в том, чтобы громко заявить о себе и донести игру до нашей целевой аудитории.</p>
+                        Мы верим в наш продукт и готовы вкладывать силы, но нам нужна ваша мощь и опыт в том, чтобы громмо заявить о себе и донести игру до нашей целевой аудитории.</p>
                     `;
                     break;
             }
@@ -987,6 +1124,9 @@
             
             modalTitle.textContent = 'ВСТРЕЧА С МОНСТРОМ';
             modalText.innerHTML = `${monsterText}<br><br><strong>Сила противника – ${strength}</strong>`;
+            
+            // Настраиваем карты предметов для боя
+            setupItemCardsForBattle();
             
             // Показываем кнопки сражения внутри модального окна
             battleContent.style.display = 'block';
@@ -1060,10 +1200,8 @@
             const dollCard = document.getElementById('item-doll');
             if (dollCard) {
                 // Добавляем обработчик для куколки
-                const originalOnClick = dollCard.onclick;
                 dollCard.onclick = function() {
                     useDollAgainstFirstMonster();
-                    dollCard.onclick = originalOnClick; // Восстанавливаем оригинальный обработчик
                 };
             }
         }
@@ -1150,10 +1288,8 @@
             const amuletCard = document.getElementById('item-amulet');
             if (amuletCard) {
                 // Добавляем обработчик для амулета
-                const originalOnClick = amuletCard.onclick;
                 amuletCard.onclick = function() {
                     useAmuletToEscape();
-                    amuletCard.onclick = originalOnClick; // Восстанавливаем оригинальный обработчик
                 };
             }
         }
@@ -1209,7 +1345,7 @@
             modal.classList.add('active');
             
             // Обновляем подсказки
-            hintRight.style.display = 'none';
+            hintRightDeck.style.display = 'none';
             hintBottom.style.display = 'none';
         }
 
