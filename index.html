@@ -77,13 +77,14 @@
             height: 220px;
         }
         
+        /* Колода теперь квадратная */
         .deck {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 150px;
-            height: 220px;
+            width: 220px; /* Изменено на квадратную */
+            height: 220px; /* Изменено на квадратную */
             background-image: url('assets/back.png');
             background-size: cover;
             border-radius: 12px;
@@ -274,20 +275,6 @@
             transform: translateY(60%);
         }
         
-        /* Эффекты текста */
-        .location-name {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-            color: #d4af37;
-            z-index: 5;
-        }
-        
         /* Анимации */
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -298,27 +285,30 @@
             animation: fadeIn 0.8s ease;
         }
         
-        /* Контейнер для карт локаций вокруг центральной */
+        /* Контейнер для карт локаций */
         .location-grid {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 660px;
-            height: 660px;
             display: none;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 10px;
+            gap: 20px;
         }
         
         .grid-cell {
+            width: 220px;
+            height: 220px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         
-        .grid-cell .card {
+        /* Сетка для отслеживания позиций */
+        .location-cell {
+            width: 220px;
+            height: 220px;
             position: relative;
         }
     </style>
@@ -371,7 +361,12 @@
             monster1Defeated: false,
             monster2Defeated: false,
             monster3Defeated: false,
-            locationGrid: {}
+            locationGrid: {
+                '-1,-1': null, '0,-1': null, '1,-1': null,
+                '-1,0': null,  '0,0': null,  '1,0': null,
+                '-1,1': null,  '0,1': null,  '1,1': null
+            },
+            currentPosition: { x: 0, y: 0 }
         };
 
         // DOM элементы
@@ -403,25 +398,25 @@
                     startGame();
                     break;
                 case 'afterStart':
-                    placeLocationCards();
+                    placeLocationCardsAroundCurrent();
                     break;
                 case 'afterAbout':
-                    placeLocationCardsAround('about');
+                    placeLocationCardsAroundCurrent();
                     break;
                 case 'afterMonster1':
-                    placeLocationCardsAround('monster1');
+                    placeLocationCardsAroundCurrent();
                     break;
                 case 'afterPurpose':
-                    placeLocationCardsAround('purpose');
+                    placeLocationCardsAroundCurrent();
                     break;
                 case 'afterMonster2':
-                    placeLocationCardsAround('monster2');
+                    placeLocationCardsAroundCurrent();
                     break;
                 case 'afterCoop':
-                    placeLocationCardsAround('coop');
+                    placeLocationCardsAroundCurrent();
                     break;
                 case 'afterMonster3':
-                    placeLocationCardsAround('monster3');
+                    placeLocationCardsAroundCurrent();
                     break;
             }
         }
@@ -458,12 +453,6 @@
             startCard.id = 'location-start';
             document.querySelector('.game-container').appendChild(startCard);
             
-            // Добавляем название локации
-            const locationName = document.createElement('div');
-            locationName.className = 'location-name';
-            locationName.textContent = 'СТАРТОВАЯ ЛОКАЦИЯ';
-            startCard.appendChild(locationName);
-            
             // Анимация появления
             setTimeout(() => {
                 startCard.style.opacity = '1';
@@ -480,6 +469,7 @@
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
+                gameState.locationGrid['0,0'] = 'start';
                 updateLocationTracker('Стартовая локация');
             }, 300);
         }
@@ -505,8 +495,8 @@
             }, 300);
         }
 
-        // Размещение карт локаций вокруг стартовой локации
-        function placeLocationCards() {
+        // Размещение карт локаций вокруг текущей позиции
+        function placeLocationCardsAroundCurrent() {
             // Убираем карту куколки
             const dollCard = document.getElementById('item-doll');
             if (dollCard) {
@@ -517,43 +507,49 @@
             // Скрываем заголовок
             titleContainer.style.opacity = '0';
             
-            // Создаем сетку для карт локаций
-            locationGrid.style.display = 'grid';
+            // Получаем текущую позицию
+            const { x, y } = gameState.currentPosition;
             
-            // Создаем 4 карты локаций вокруг центра
+            // Определяем позиции для новых карт (север, восток, юг, запад)
             const positions = [
-                { row: 1, col: 2 }, // сверху
-                { row: 2, col: 3 }, // справа
-                { row: 3, col: 2 }, // снизу
-                { row: 2, col: 1 }  // слева
+                { x: x, y: y - 1, direction: 'up' },
+                { x: x + 1, y: y, direction: 'right' },
+                { x: x, y: y + 1, direction: 'down' },
+                { x: x - 1, y: y, direction: 'left' }
             ];
             
+            // Создаем карты локаций вокруг текущей позиции
             positions.forEach((pos, index) => {
-                const gridCell = document.createElement('div');
-                gridCell.className = 'grid-cell';
-                gridCell.dataset.row = pos.row;
-                gridCell.dataset.col = pos.col;
-                locationGrid.appendChild(gridCell);
+                const key = `${pos.x},${pos.y}`;
                 
-                const locationCard = document.createElement('div');
-                locationCard.className = 'card location-card';
-                locationCard.style.backgroundImage = 'url("assets/back.png")';
-                locationCard.style.opacity = '0';
-                locationCard.dataset.position = index;
-                locationCard.dataset.location = 'about'; // Все ведут к карте "об игре"
-                gridCell.appendChild(locationCard);
-                
-                // Анимация появления
-                setTimeout(() => {
-                    locationCard.style.opacity = '1';
-                }, index * 200);
-                
-                // Обработчик клика
-                locationCard.addEventListener('click', () => {
-                    if (locationCard.style.backgroundImage.includes('back.png')) {
-                        revealLocationCard(locationCard);
-                    }
-                });
+                // Если в этой позиции еще нет карты, создаем новую
+                if (!gameState.locationGrid[key]) {
+                    const locationCard = document.createElement('div');
+                    locationCard.className = 'card location-card';
+                    locationCard.style.backgroundImage = 'url("assets/back.png")';
+                    locationCard.style.opacity = '0';
+                    locationCard.dataset.x = pos.x;
+                    locationCard.dataset.y = pos.y;
+                    locationCard.dataset.direction = pos.direction;
+                    
+                    // Позиционируем карту относительно центра
+                    const offsetX = (pos.x - x) * 240; // 240px - расстояние между картами
+                    const offsetY = (pos.y - y) * 240;
+                    
+                    locationCard.style.left = `calc(50% + ${offsetX}px)`;
+                    locationCard.style.top = `calc(50% + ${offsetY}px)`;
+                    locationCard.style.transform = 'translate(-50%, -50%)';
+                    
+                    document.querySelector('.game-container').appendChild(locationCard);
+                    
+                    // Анимация появления
+                    setTimeout(() => {
+                        locationCard.style.opacity = '1';
+                    }, index * 200);
+                    
+                    // Сохраняем в состоянии игры
+                    gameState.locationGrid[key] = 'closed';
+                }
             });
             
             // Показываем карты направлений
@@ -593,118 +589,95 @@
 
         // Обработка клика на карту направления
         function handleDirectionClick(direction) {
-            // Определяем, какая карта должна открыться
-            let targetLocation;
+            // Определяем новую позицию на основе направления
+            let newX = gameState.currentPosition.x;
+            let newY = gameState.currentPosition.y;
             
-            switch(gameState.currentLocation) {
-                case 'start':
-                    // Все направления ведут к карте "об игре"
-                    targetLocation = 'about';
+            switch(direction) {
+                case 'up':
+                    newY--;
                     break;
-                case 'about':
-                    // Одно из направлений ведет к монстру 1
-                    targetLocation = 'monster1';
+                case 'right':
+                    newX++;
                     break;
-                case 'monster1':
-                    // Одно из направлений ведет к карте "для кого и зачем"
-                    targetLocation = 'purpose';
+                case 'down':
+                    newY++;
                     break;
-                case 'purpose':
-                    // Одно из направлений ведет к монстру 2
-                    targetLocation = 'monster2';
+                case 'left':
+                    newX--;
                     break;
-                case 'monster2':
-                    // Одно из направлений ведет к карте "сотрудничество"
-                    targetLocation = 'coop';
-                    break;
-                case 'coop':
-                    // Одно из направлений ведет к монстру 3
-                    targetLocation = 'monster3';
-                    break;
-                case 'monster3':
-                    // Одно из направлений ведет к карте "команда"
-                    targetLocation = 'team';
-                    break;
-                default:
-                    targetLocation = 'about';
             }
             
-            // Обновляем трекер локации
-            const locationNames = {
-                'start': 'Стартовая локация',
-                'about': 'Об игре',
-                'monster1': 'Встреча с первым монстром',
-                'purpose': 'Для кого и зачем',
-                'monster2': 'Встреча со вторым монстром',
-                'coop': 'Сотрудничество',
-                'monster3': 'Встреча с третьим монстром',
-                'team': 'Команда'
-            };
+            const newPositionKey = `${newX},${newY}`;
             
-            updateLocationTracker(locationNames[targetLocation]);
-            
-            // Показываем карту локации
-            showLocationCard(targetLocation);
-            
-            // Обновляем состояние игры
-            gameState.currentLocation = targetLocation;
-            
-            // Скрываем подсказку направлений
-            hintBottom.style.display = 'none';
-            
-            // Обновляем фазу игры
-            if (targetLocation === 'about') {
-                gameState.phase = 'afterAbout';
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
-            } else if (targetLocation === 'monster1') {
-                gameState.phase = 'afterMonster1';
-                // Показываем подсказку для монстра
-                setTimeout(() => {
+            // Проверяем, есть ли карта в новой позиции
+            if (gameState.locationGrid[newPositionKey]) {
+                // Если карта уже открыта, просто перемещаемся на нее
+                if (gameState.locationGrid[newPositionKey] !== 'closed') {
+                    gameState.currentPosition = { x: newX, y: newY };
+                    gameState.currentLocation = gameState.locationGrid[newPositionKey];
+                    updateLocationTracker(getLocationName(gameState.currentLocation));
+                    
+                    // Показываем подсказку
                     hintBottom.style.display = 'block';
-                    hintBottom.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
-                }, 1000);
-            } else if (targetLocation === 'purpose') {
-                gameState.phase = 'afterPurpose';
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
-            } else if (targetLocation === 'monster2') {
-                gameState.phase = 'afterMonster2';
-                // Показываем подсказку для монстра
-                setTimeout(() => {
-                    hintBottom.style.display = 'block';
-                    hintBottom.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
-                }, 1000);
-            } else if (targetLocation === 'coop') {
-                gameState.phase = 'afterCoop';
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
-            } else if (targetLocation === 'monster3') {
-                gameState.phase = 'afterMonster3';
-                // Показываем подсказку для монстра
-                setTimeout(() => {
-                    hintBottom.style.display = 'block';
-                    hintBottom.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
-                }, 1000);
-            } else if (targetLocation === 'team') {
-                // Конец игры
-                showTeamLocation();
+                    hintBottom.textContent = 'Доступные действия: выбрать карту направления';
+                    
+                    // Обновляем фазу игры
+                    updateGamePhase();
+                } else {
+                    // Если карта закрыта, открываем ее
+                    openLocationCard(newX, newY, direction);
+                }
             }
         }
 
-        // Показать карту локации
-        function showLocationCard(locationType) {
-            // Создаем карту локации
-            const locationCard = document.createElement('div');
-            locationCard.className = 'card location-card fade-in';
-            locationCard.style.backgroundImage = `url("assets/card-${locationType}.png")`;
-            locationCard.style.left = '50%';
-            locationCard.style.top = '50%';
-            locationCard.style.transform = 'translate(-50%, -50%)';
-            locationCard.style.opacity = '0';
-            locationCard.id = `location-${locationType}`;
-            document.querySelector('.game-container').appendChild(locationCard);
+        // Открыть карту локации
+        function openLocationCard(x, y, direction) {
+            const positionKey = `${x},${y}`;
             
-            // Анимация появления
-            setTimeout(() => {
-                locationCard.style.opacity = '1';
+            // Определяем, какую карту открыть в зависимости от текущей локации и направления
+            let locationType;
+            
+            switch(gameState.currentLocation) {
+                case 'start':
+                    locationType = 'about';
+                    break;
+                case 'about':
+                    locationType = 'monster1';
+                    break;
+                case 'monster1':
+                    locationType = 'purpose';
+                    break;
+                case 'purpose':
+                    locationType = 'monster2';
+                    break;
+                case 'monster2':
+                    locationType = 'coop';
+                    break;
+                case 'coop':
+                    locationType = 'monster3';
+                    break;
+                case 'monster3':
+                    locationType = 'team';
+                    break;
+                default:
+                    locationType = 'about';
+            }
+            
+            // Находим карту по координатам
+            const locationCard = document.querySelector(`.card.location-card[data-x="${x}"][data-y="${y}"]`);
+            
+            if (locationCard) {
+                // Меняем карту на открытую
+                locationCard.style.backgroundImage = `url("assets/card-${locationType}.png")`;
+                
+                // Обновляем состояние игры
+                gameState.locationGrid[positionKey] = locationType;
+                gameState.currentPosition = { x, y };
+                gameState.currentLocation = locationType;
+                
+                // Обновляем трекер локации
+                updateLocationTracker(getLocationName(locationType));
                 
                 // Добавляем обработчик клика в зависимости от типа локации
                 if (locationType === 'about' || locationType === 'purpose' || locationType === 'coop' || locationType === 'team') {
@@ -719,8 +692,70 @@
                     locationCard.addEventListener('click', () => {
                         showMonsterBattle(locationType);
                     });
+                    
+                    // Показываем подсказку для монстра
+                    setTimeout(() => {
+                        hintBottom.style.display = 'block';
+                        if (locationType === 'monster1') {
+                            hintBottom.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
+                        } else if (locationType === 'monster2') {
+                            hintBottom.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
+                        } else if (locationType === 'monster3') {
+                            hintBottom.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
+                        }
+                    }, 1000);
                 }
-            }, 300);
+                
+                // Обновляем фазу игры
+                updateGamePhase();
+                
+                // Обновляем подсказку справа
+                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+            }
+        }
+
+        // Получить название локации для трекера
+        function getLocationName(locationType) {
+            const locationNames = {
+                'start': 'Стартовая локация',
+                'about': 'Об игре',
+                'monster1': 'Встреча с первым монстром',
+                'purpose': 'Для кого и зачем',
+                'monster2': 'Встреча со вторым монстром',
+                'coop': 'Сотрудничество',
+                'monster3': 'Встреча с третьим монстром',
+                'team': 'Команда'
+            };
+            
+            return locationNames[locationType] || locationType;
+        }
+
+        // Обновить фазу игры
+        function updateGamePhase() {
+            switch(gameState.currentLocation) {
+                case 'about':
+                    gameState.phase = 'afterAbout';
+                    break;
+                case 'monster1':
+                    gameState.phase = 'afterMonster1';
+                    break;
+                case 'purpose':
+                    gameState.phase = 'afterPurpose';
+                    break;
+                case 'monster2':
+                    gameState.phase = 'afterMonster2';
+                    break;
+                case 'coop':
+                    gameState.phase = 'afterCoop';
+                    break;
+                case 'monster3':
+                    gameState.phase = 'afterMonster3';
+                    break;
+                case 'team':
+                    // Конец игры
+                    showTeamLocation();
+                    break;
+            }
         }
 
         // Показать эффект локации
@@ -1094,134 +1129,6 @@
         function updateLocationTracker(locationName) {
             locationTracker.textContent = `Текущая локация: ${locationName}`;
             locationTracker.style.display = 'block';
-        }
-
-        // Размещение карт локаций вокруг определенной карты
-        function placeLocationCardsAround(locationType) {
-            // Создаем 4 карты локаций вокруг текущей локации
-            const positions = [
-                { row: 1, col: 2 }, // сверху
-                { row: 2, col: 3 }, // справа
-                { row: 3, col: 2 }, // снизу
-                { row: 2, col: 1 }  // слева
-            ];
-            
-            // Очищаем сетку
-            locationGrid.innerHTML = '';
-            locationGrid.style.display = 'grid';
-            
-            positions.forEach((pos, index) => {
-                const gridCell = document.createElement('div');
-                gridCell.className = 'grid-cell';
-                gridCell.dataset.row = pos.row;
-                gridCell.dataset.col = pos.col;
-                locationGrid.appendChild(gridCell);
-                
-                const locationCard = document.createElement('div');
-                locationCard.className = 'card location-card';
-                locationCard.style.backgroundImage = 'url("assets/back.png")';
-                locationCard.style.opacity = '0';
-                locationCard.dataset.position = index;
-                
-                // Определяем, какая локация будет открыта при клике
-                let targetLocation;
-                switch(locationType) {
-                    case 'about':
-                        targetLocation = 'monster1';
-                        break;
-                    case 'monster1':
-                        targetLocation = 'purpose';
-                        break;
-                    case 'purpose':
-                        targetLocation = 'monster2';
-                        break;
-                    case 'monster2':
-                        targetLocation = 'coop';
-                        break;
-                    case 'coop':
-                        targetLocation = 'monster3';
-                        break;
-                    case 'monster3':
-                        targetLocation = 'team';
-                        break;
-                }
-                
-                locationCard.dataset.location = targetLocation;
-                gridCell.appendChild(locationCard);
-                
-                // Анимация появления
-                setTimeout(() => {
-                    locationCard.style.opacity = '1';
-                }, index * 200);
-                
-                // Обработчик клика
-                locationCard.addEventListener('click', () => {
-                    if (locationCard.style.backgroundImage.includes('back.png')) {
-                        revealLocationCard(locationCard);
-                    }
-                });
-            });
-            
-            // Показываем подсказку
-            hintBottom.style.display = 'block';
-            hintBottom.textContent = 'Доступные действия: Выбрать направление';
-        }
-
-        // Открыть карту локации
-        function revealLocationCard(card) {
-            const locationType = card.dataset.location;
-            card.style.backgroundImage = `url("assets/card-${locationType}.png")`;
-            
-            // Обновляем состояние игры
-            gameState.currentLocation = locationType;
-            
-            // Добавляем обработчик клика в зависимости от типа локации
-            if (locationType === 'about' || locationType === 'purpose' || locationType === 'coop' || locationType === 'team') {
-                card.addEventListener('click', () => {
-                    showLocationEffect(locationType);
-                });
-                
-                // Показываем подсказку
-                hintBottom.style.display = 'block';
-                hintBottom.textContent = 'Доступные действия: Применить эффект локации';
-            } else if (locationType.includes('monster')) {
-                card.addEventListener('click', () => {
-                    showMonsterBattle(locationType);
-                });
-                
-                // Показываем подсказку для монстра
-                setTimeout(() => {
-                    hintBottom.style.display = 'block';
-                    if (locationType === 'monster1') {
-                        hintBottom.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
-                    } else if (locationType === 'monster2') {
-                        hintBottom.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
-                    } else if (locationType === 'monster3') {
-                        hintBottom.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
-                    }
-                }, 1000);
-            }
-            
-            // Обновляем фазу игры
-            if (locationType === 'about') {
-                gameState.phase = 'afterAbout';
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
-            } else if (locationType === 'monster1') {
-                gameState.phase = 'afterMonster1';
-            } else if (locationType === 'purpose') {
-                gameState.phase = 'afterPurpose';
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
-            } else if (locationType === 'monster2') {
-                gameState.phase = 'afterMonster2';
-            } else if (locationType === 'coop') {
-                gameState.phase = 'afterCoop';
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
-            } else if (locationType === 'monster3') {
-                gameState.phase = 'afterMonster3';
-            } else if (locationType === 'team') {
-                // Конец игры
-                showTeamLocation();
-            }
         }
 
         // Инициализация игры
