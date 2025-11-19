@@ -1,106 +1,1006 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сон Журавля</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Сон Журавля — прототип</title>
+
+<!-- Playfair Display -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --card-w: 160px;
+    --card-h: 220px;
+    --loc-w: 200px;
+    --loc-h: 200px;
+    --dir-w: 110px;
+    --dir-h: 70px;
+    --gap: 18px;
+    --transition: 450ms cubic-bezier(.2,.9,.3,1);
+    --hint-bg: rgba(0,0,0,0.55);
+    --panel-radius: 12px;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: url('wood.png') center/cover no-repeat fixed;
+    -webkit-font-smoothing:antialiased;
+    color:#fafafa;
+  }
+
+  /* Top header area */
+  .header {
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align:center;
+    pointer-events: none;
+  }
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-size: 44px;
+    margin: 0;
+    line-height: 1;
+    text-shadow: 0 3px 10px rgba(0,0,0,0.6);
+  }
+  .subtitle {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    margin-top:6px;
+    opacity:0.95;
+  }
+
+  /* Main board */
+  .board {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Deck area */
+  .deck-area {
+    position: absolute;
+    left: calc(50% - 220px);
+    top: 50%;
+    transform: translate(-20%, -10%);
+    width: var(--card-w);
+    height: var(--card-h);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .deck {
+    width: var(--card-w);
+    height: var(--card-h);
+    background-image: url('back.png');
+    background-size: cover;
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    transform-origin: center;
+    cursor: pointer;
+    transition: transform 250ms ease, left 300ms ease, top 300ms ease;
+    position: absolute;
+  }
+
+  .deck.hud {
+    pointer-events:auto;
+  }
+
+  .hint {
+    margin-top:10px;
+    width:260px;
+    background: var(--hint-bg);
+    padding:10px;
+    border-radius:10px;
+    font-size:14px;
+    color:#fff;
+    text-align:left;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+
+  /* Center play area where main card appears */
+  .play-area {
+    position: relative;
+    width: 720px;
+    height: 520px;
+    display: flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .card {
+    position: absolute;
+    width: var(--loc-w);
+    height: var(--loc-h);
+    background-size: cover;
+    border-radius: 8px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.6);
+    transition: transform var(--transition), left var(--transition), top var(--transition), opacity var(--transition);
+    cursor: pointer;
+  }
+
+  .card.small { width: 140px; height: 140px; }
+
+  /* item cards (rectangular) */
+  .item {
+    width: var(--card-w);
+    height: 120px;
+    border-radius:8px;
+    background-size: cover;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.5);
+    position: absolute;
+    transition: transform var(--transition), left var(--transition), top var(--transition);
+    cursor: pointer;
+  }
+
+  /* Hidden item stack at right (80% hidden) */
+  .item-stack {
+    position: absolute;
+    right: -calc(var(--card-w) * 0.8);
+    top: 50%;
+    transform: translateY(-50%);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    align-items:flex-end;
+    pointer-events: auto;
+  }
+  .item-stack .item {
+    right:0;
+  }
+  .item-stack .peek {
+    transform: translateX(-18px);
+  }
+
+  .item-stack .item:hover {
+    transform: translateX(-46px) rotate(0deg);
+  }
+
+  /* Directions at bottom hidden 80% */
+  .directions {
+    position:absolute;
+    bottom: -calc(var(--dir-h) * 0.8);
+    left:50%;
+    transform: translateX(-50%);
+    display:flex;
+    gap:12px;
+    transition: bottom var(--transition);
+    pointer-events: auto;
+  }
+  .direction {
+    width: var(--dir-w);
+    height: var(--dir-h);
+    background-size: cover;
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    transform: translateY(0);
+    transition: transform 250ms cubic-bezier(.2,.9,.3,1);
+    cursor: pointer;
+  }
+  .direction:hover { transform: translateY(-36px); }
+
+  /* Tracker */
+  .tracker {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    width: 260px;
+    background: rgba(0,0,0,0.6);
+    padding:10px;
+    border-radius:10px;
+    font-size:14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  }
+  .tracker h4 { margin:0 0 6px 0; font-size:15px; }
+
+  /* Modal info window */
+  .modal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: min(840px, 92%);
+    height: min(70vh, 620px);
+    transform: translate(-50%,-50%) scale(0.98);
+    background: rgba(10,10,10,0.7);
+    border-radius: 12px;
+    padding:18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+    color:#fff;
+    display: none;
+    flex-direction: column;
+    z-index: 1200;
+  }
+  .modal.show { display:flex; animation: showModal 220ms ease both; }
+  @keyframes showModal { from {opacity:0; transform: translate(-50%,-50%) scale(0.96);} to {opacity:1; transform: translate(-50%,-50%) scale(1);} }
+
+  .modal .content {
+    overflow:auto;
+    padding-right:8px;
+    line-height:1.45;
+    font-size:15px;
+    background: rgba(255,255,255,0.02);
+    border-radius:8px;
+    padding:16px;
+    margin-bottom:12px;
+  }
+  .modal .close-btn {
+    align-self:flex-end;
+    background: #fff;
+    color:#111;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    border:none;
+    font-weight:600;
+  }
+
+  /* Small helpers */
+  .top-right-hint {
+    position:absolute;
+    right:18px;
+    top:18px;
+    width:300px;
+    background: var(--hint-bg);
+    padding:10px;
+    border-radius:10px;
+    font-size:14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  }
+
+  /* responsive */
+  @media (max-width:900px){
+    .play-area { width: 92vw; height: 62vh; }
+    :root{ --loc-w: 160px; --loc-h:160px; --card-w:120px; --card-h:160px; --dir-w:90px; --dir-h:60px; }
+  }
+</style>
 </head>
+
 <body>
-    <div class="game-container">
-        <!-- Заголовок -->
-        <header class="game-header">
-            <h1>СОН ЖУРАВЛЯ</h1>
-            <p>Давайте знакомиться!</p>
-        </header>
 
-        <!-- Игровое поле -->
-        <div class="game-board" id="gameBoard">
-            <!-- Карты будут добавляться сюда -->
-        </div>
+  <div class="header">
+    <h1 class="title" id="mainTitle">Сон Журавля</h1>
+    <div class="subtitle" id="subTitle">Узнайте нас лучше</div>
+  </div>
 
-        <!-- Колода -->
-        <div class="deck" id="deck">
-            <img src="assets/back.png" alt="Колода карт">
-        </div>
+  <div class="tracker" id="tracker">
+    <h4>Трекер локации</h4>
+    <div id="trackerText">—</div>
+  </div>
 
-        <!-- Панель предметов -->
-        <div class="inventory-panel" id="inventoryPanel">
-            <div class="inventory-card hidden" id="dollCard" data-type="doll">
-                <img src="assets/item-doll.png" alt="Куколка-оберег">
-                <span>Куколка-оберег</span>
-            </div>
-            <div class="inventory-card hidden" id="swordCard" data-type="sword">
-                <img src="assets/item-sword.png" alt="Меч-кладенец">
-                <span>Меч-кладенец</span>
-            </div>
-            <div class="inventory-card hidden" id="amuletCard" data-type="amulet">
-                <img src="assets/item-amulet.png" alt="Защитный амулет">
-                <span>Защитный амулет</span>
-            </div>
-        </div>
+  <div class="top-right-hint" id="rightHint">
+    <strong>Доступные действия:</strong>
+    <div id="rightHintText">—</div>
+  </div>
 
-        <!-- Панель направлений -->
-        <div class="directions-panel hidden" id="directionsPanel">
-            <h3>Выберите направление:</h3>
-            <div class="directions-container">
-                <div class="direction-card" data-direction="top">
-                    <img src="assets/direction-up.png" alt="Вперёд">
-                    <span>Вперёд</span>
-                </div>
-                <div class="direction-card" data-direction="left">
-                    <img src="assets/direction-left.png" alt="Налево">
-                    <span>Налево</span>
-                </div>
-                <div class="direction-card" data-direction="right">
-                    <img src="assets/direction-right.png" alt="Направо">
-                    <span>Направо</span>
-                </div>
-                <div class="direction-card" data-direction="bottom">
-                    <img src="assets/direction-down.png" alt="Назад">
-                    <span>Назад</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Модальные окна -->
-        <div class="modal hidden" id="gameModal">
-            <div class="modal-content">
-                <span class="close" id="closeModal">&times;</span>
-                <h2 id="modalTitle">Заголовок</h2>
-                <div id="modalContent">
-                    <p>Содержимое модального окна...</p>
-                </div>
-                <button class="btn" id="modalConfirm">Понятно</button>
-            </div>
-        </div>
-
-        <div class="modal hidden" id="combatModal">
-            <div class="modal-content combat">
-                <h2 id="combatTitle">Столкновение с монстром!</h2>
-                <div class="combat-info">
-                    <p>Сила противника: <strong id="monsterPower">10</strong></p>
-                    <p>Нужно выбросить: <strong id="requiredPower">10+</strong></p>
-                </div>
-                <div class="dice-container">
-                    <button class="btn" id="rollDice">Бросить 2D6</button>
-                    <div class="dice-result" id="diceResult">—</div>
-                </div>
-                <div class="combat-choices hidden" id="combatChoices">
-                    <p>Использовать предмет:</p>
-                    <button class="btn item-btn" id="useDoll">Куколка-оберег (переброс)</button>
-                    <button class="btn item-btn" id="useSword">Меч-кладенец (+3 к броску)</button>
-                    <button class="btn item-btn" id="useAmulet">Амулет (сбежать)</button>
-                </div>
-                <div class="weapon-choice hidden" id="weaponChoice">
-                    <p>Выберите способ атаки:</p>
-                    <button class="btn" id="useBareHands">Биться голыми руками</button>
-                    <button class="btn" id="useSwordCombat">Использовать меч</button>
-                </div>
-            </div>
-        </div>
+  <div class="board">
+    <div class="play-area" id="playArea">
+      <!-- dynamic cards will be injected here -->
     </div>
 
-    <script src="script.js"></script>
+    <div class="deck-area">
+      <div class="deck hud" id="deck"></div>
+      <div class="hint" id="leftHint"> &lt;&lt;&lt; Выложить стартовую локацию</div>
+    </div>
+
+    <!-- item stack (right, partially hidden) -->
+    <div class="item-stack" id="itemStack"></div>
+
+    <!-- directions (hidden mostly below bottom) -->
+    <div class="directions" id="directions">
+      <div class="direction" id="dirUp" style="background-image:url('direction-up.png')" data-dir="up"></div>
+      <div class="direction" id="dirDown" style="background-image:url('direction-down.png')" data-dir="down"></div>
+      <div class="direction" id="dirLeft" style="background-image:url('direction-left.png')" data-dir="left"></div>
+      <div class="direction" id="dirRight" style="background-image:url('direction-right.png')" data-dir="right"></div>
+    </div>
+
+  </div>
+
+  <!-- modal window for location effects, lore, fights -->
+  <div class="modal" id="modal">
+    <div class="content" id="modalContent"></div>
+    <button class="close-btn" id="modalClose">Вернуться к игре</button>
+  </div>
+
+<script>
+/* ======= STATE & ASSETS ======= */
+const ASSETS = {
+  deck: 'back.png',
+  start: 'start.png',
+  'about': 'card-about.png',
+  'coop': 'card-coop.png',
+  'purpose': 'card-purpose.png',
+  'team': 'card-team.png',
+  'monster1': 'card-monster1.png',
+  'monster2': 'card-monster2.png',
+  'monster3': 'card-monster3.png',
+  'dir-up': 'direction-up.png',
+  'dir-down': 'direction-down.png',
+  'dir-left': 'direction-left.png',
+  'dir-right': 'direction-right.png',
+  'item-doll': 'item-doll.png',
+  'item-amulet': 'item-amulet.png',
+  'item-sword': 'item-sword.png'
+};
+
+const playArea = document.getElementById('playArea');
+const deckEl = document.getElementById('deck');
+const leftHint = document.getElementById('leftHint');
+const rightHintText = document.getElementById('rightHintText');
+const mainTitle = document.getElementById('mainTitle');
+const subTitle = document.getElementById('subTitle');
+const directionsEl = document.getElementById('directions');
+const modal = document.getElementById('modal');
+const modalContent = document.getElementById('modalContent');
+const modalClose = document.getElementById('modalClose');
+const trackerText = document.getElementById('trackerText');
+const itemStack = document.getElementById('itemStack');
+
+let state = {
+  deckMoved: false,
+  placedLocationCount: 0,
+  openedLocations: [], // array of objects {id, img, pos}
+  cursorLocation: null, // id of last opened location
+  items: [], // strings: 'doll','sword','amulet'
+  phase: 'initial',
+  // predefined sequence of what images to reveal for successive new location opens
+  locationSequence: [
+    'start', /* index0 -> start already used */
+    'monster1', // next new location → first monster
+    'purpose',  // then purpose
+    'monster2', // second monster
+    'coop',     // cooperation
+    'monster3', // third monster
+    'team'      // team card after escape
+  ],
+  sequenceIndex: 1 // next to reveal (we already opened start at 0)
+};
+
+/* util: create element with class and styles */
+function el(tag='div', cls='', styles={}) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  Object.assign(e.style, styles);
+  return e;
+}
+
+/* position helpers: place things in play area coords */
+function centerCoords() {
+  const r = playArea.getBoundingClientRect();
+  return { x: r.width/2, y: r.height/2 };
+}
+
+/* convert center coords to CSS left/top for absolutely positioned elements inside playArea */
+function posToCss(x,y, elw=0,elh=0) {
+  return { left: (x - elw/2) + 'px', top: (y - elh/2) + 'px' };
+}
+
+/* ======= INITIAL UI ======= */
+deckEl.style.backgroundImage = `url('${ASSETS.deck}')`;
+rightHintText.innerText = '⟵⟵⟵ Выложить новые карты локаций';
+document.getElementById('rightHint').style.display='none'; // hide until needed
+directionsEl.style.pointerEvents = 'none';
+
+/* place deck initially at center area defined by .deck-area; deckEl is absolute so set left/top according to its container */
+function placeDeckInitial(){
+  const area = document.querySelector('.deck-area').getBoundingClientRect();
+  const d = deckEl.getBoundingClientRect();
+  // center deck inside deck-area
+  const container = document.querySelector('.deck-area');
+  const areaRect = container.getBoundingClientRect();
+  deckEl.style.left = (areaRect.left + (areaRect.width - d.width)/2 - playArea.getBoundingClientRect().left) + 'px';
+  deckEl.style.top  = (areaRect.top + (areaRect.height - d.height)/2 - playArea.getBoundingClientRect().top) + 'px';
+}
+window.addEventListener('load', placeDeckInitial);
+window.addEventListener('resize', placeDeckInitial);
+
+/* ======= GAME FLOW ACTIONS ======= */
+
+/* animate moving deck to left-bottom of viewport (inside playArea) */
+function moveDeckToBottomLeft(){
+  if (state.deckMoved) return;
+  state.deckMoved = true;
+  const area = playArea.getBoundingClientRect();
+  const d = deckEl.getBoundingClientRect();
+  const left = 18; // px inside playArea
+  const top = area.height - d.height - 18;
+  deckEl.style.transition = 'left 600ms cubic-bezier(.2,.9,.3,1), top 600ms cubic-bezier(.2,.9,.3,1), transform 400ms';
+  deckEl.style.left = left + 'px';
+  deckEl.style.top  = top + 'px';
+  // drop small tilt
+  deckEl.style.transform = 'rotate(-6deg)';
+}
+
+/* Create and animate a center location card (start) */
+function spawnStartCard(){
+  // create card element
+  const card = el('div','card');
+  card.dataset.type = 'location';
+  card.dataset.id = 'start';
+  card.style.backgroundImage = `url('${ASSETS.start}')`;
+  // start from bottom-left where deck is
+  const deckRect = deckEl.getBoundingClientRect();
+  const paRect = playArea.getBoundingClientRect();
+  const startLeft = deckRect.left - paRect.left;
+  const startTop  = deckRect.top  - paRect.top;
+  card.style.left = startLeft + 'px';
+  card.style.top  = startTop  + 'px';
+  card.style.transform = 'scale(0.98)';
+  playArea.appendChild(card);
+
+  // animate to center after small delay
+  setTimeout(()=>{
+    const csize = {w: card.offsetWidth, h: card.offsetHeight};
+    const center = centerCoords();
+    const css = posToCss(center.x, center.y - 8, csize.w, csize.h);
+    card.style.left = css.left;
+    card.style.top  = css.top;
+    card.style.transform = 'scale(1)';
+    // register opened location
+    state.openedLocations.push({id:'start', el:card, pos:'center'});
+    state.cursorLocation = 'start';
+    trackerText.innerText = 'Стартовая локация';
+    // attach click to location to apply effect
+    card.addEventListener('click', ()=> openLocationEffect('start'));
+  }, 220);
+}
+
+/* spawn initial item (doll) sliding from bottom-right to center, then sit right hidden */
+function spawnInitialItem(){
+  const item = el('div','item');
+  item.dataset.item = 'doll';
+  item.style.backgroundImage = `url('${ASSETS['item-doll']}')`;
+  const paRect = playArea.getBoundingClientRect();
+  // start from bottom-right offscreen
+  item.style.left = (paRect.width + 60) + 'px';
+  item.style.top  = (paRect.height + 40) + 'px';
+  playArea.appendChild(item);
+
+  // animate to center-right neighbor
+  setTimeout(()=>{
+    const center = centerCoords();
+    const targetX = center.x + 220;
+    const targetY = center.y + 10;
+    item.style.left = (targetX - item.offsetWidth/2) + 'px';
+    item.style.top  = (targetY - item.offsetHeight/2) + 'px';
+    // add small shadow & pointer
+    item.addEventListener('click', () => useItemFromStack('doll'));
+  }, 300);
+
+  // after appearing, add to items but move to right stack (hidden 80%) to indicate possession
+  setTimeout(()=>{
+    // remove from play area visual and create in itemStack (hidden)
+    if (item.parentNode) item.parentNode.removeChild(item);
+    const stackItem = el('div','item');
+    stackItem.dataset.item='doll';
+    stackItem.style.backgroundImage = `url('${ASSETS['item-doll']}')`;
+    stackItem.style.transform = 'rotate(0deg)';
+    stackItem.style.right = '0px';
+    stackItem.addEventListener('click', ()=> {
+      // clicking the hidden item peeks it (we emulate by toggling class)
+      // but actual use should be invoked by clicking "use" interactions in fights etc.
+      stackItem.classList.toggle('peek');
+    });
+    itemStack.appendChild(stackItem);
+    state.items.push('doll');
+    updateRightHint('Доступные действия: выложить новые карты локаций');
+  }, 1200);
+}
+
+/* show hint on right */
+function updateRightHint(text){
+  document.getElementById('rightHint').style.display='block';
+  rightHintText.innerText = text;
+}
+
+/* after deck first click full sequence */
+function onDeckFirstClick(){
+  moveDeckToBottomLeft();
+  setTimeout(()=>{
+    // spawn start card
+    spawnStartCard();
+    // update headers
+    mainTitle.innerText = 'Поздравляем с началом пути!';
+    subTitle.innerText = '';
+    // spawn initial item
+    spawnInitialItem();
+    // show item/loc effect hint under cards
+    showUnderCardsHint("Эффект карты локации: начать игру на знакомство\nПолученные предметы:\nкуколка-оберег");
+    updateRightHint('Доступные действия: <<<Выложить новые карты локаций');
+    // show directions (hidden) after a moment
+    setTimeout(()=> {
+      // show directions area (still hidden below); reveal by moving bottom to small negative (20%)
+      directionsEl.style.bottom = '-24px';
+      directionsEl.style.pointerEvents = 'none';
+    }, 700);
+  }, 260);
+}
+
+/* Show small text under center cards */
+let underHintEl = null;
+function showUnderCardsHint(text){
+  if (underHintEl) underHintEl.remove();
+  underHintEl = el('div','hint');
+  underHintEl.style.position = 'absolute';
+  underHintEl.style.bottom = '28px';
+  underHintEl.style.left = '50%';
+  underHintEl.style.transform = 'translateX(-50%)';
+  underHintEl.style.whiteSpace = 'pre-line';
+  underHintEl.innerText = text;
+  playArea.appendChild(underHintEl);
+}
+
+/* ======= SECOND CLICK: deal 4 face-down location cards around start (rubashka up) and show directions fully ======= */
+function dealSurroundingLocations(){
+  // remove title text
+  mainTitle.innerText = '';
+  subTitle.innerText = '';
+  // ensure start exists in openedLocations
+  const startRec = state.openedLocations.find(l => l.id === 'start');
+  if (!startRec) return;
+
+  const centerRect = startRec.el.getBoundingClientRect();
+  const paRect = playArea.getBoundingClientRect();
+  // positions relative to center of playArea
+  const center = centerCoords();
+  const offsets = {
+    up: {x:center.x, y:center.y - (state.openedLocations[0].el.offsetHeight + 130)},
+    down: {x:center.x, y:center.y + (state.openedLocations[0].el.offsetHeight + 130)},
+    left: {x:center.x - (state.openedLocations[0].el.offsetWidth + 150), y:center.y},
+    right:{x:center.x + (state.openedLocations[0].el.offsetWidth + 150), y:center.y}
+  };
+
+  // create 4 face-down location cards (rubashka up)
+  Object.keys(offsets).forEach((dir, idx)=>{
+    const c = el('div','card small');
+    c.dataset.type='location-back';
+    c.style.backgroundImage = `url('${ASSETS.deck}')`;
+    // start from deck position
+    const deckRect = deckEl.getBoundingClientRect();
+    const startLeft = deckRect.left - paRect.left;
+    const startTop  = deckRect.top  - paRect.top;
+    c.style.left = startLeft + 'px';
+    c.style.top  = startTop  + 'px';
+    playArea.appendChild(c);
+    // animate to position
+    setTimeout(()=>{
+      const css = posToCss(offsets[dir].x, offsets[dir].y, c.offsetWidth, c.offsetHeight);
+      c.style.left = css.left;
+      c.style.top  = css.top;
+      // store placeholder mapping
+      c.dataset.slot = dir;
+    }, 280 + (idx*80));
+  });
+
+  // show directions fully and allow interactivity
+  setTimeout(()=>{
+    directionsEl.style.bottom = '8px';
+    directionsEl.style.pointerEvents = 'auto';
+    updateRightHint('Доступные действия: выбрать направление');
+  }, 600);
+
+  // hide under hint
+  if (underHintEl) { underHintEl.remove(); underHintEl = null; }
+  document.getElementById('mainTitle').innerText = '';
+  document.getElementById('subTitle').innerText = '';
+}
+
+/* Reveal a location according to chosen direction; the rule: whichever slot (up/down/left/right) open, will be revealed.
+   The revealed image is determined by state.locationSequence[state.sequenceIndex]. If sequence exhausted - default to card-about.
+*/
+function revealLocationAtDirection(dir){
+  // find the face-down card with dataset.slot==dir
+  const backs = Array.from(playArea.querySelectorAll('.card')).filter(c=> c.dataset.slot === dir && c.dataset.type === 'location-back');
+  if (backs.length === 0) {
+    // if no back found, maybe the direction leads to already opened location (we should update tracker)
+    // find opened location by pos matching
+    const opened = state.openedLocations.find(l => l.pos === dir);
+    if (opened) {
+      // moving cursor to that location
+      state.cursorLocation = opened.id;
+      trackerText.innerText = displayNameForId(opened.id);
+      updateRightHint('Доступные действия: выбрать карту направления');
+    }
+    return;
+  }
+  const back = backs[0];
+  // determine which image to place
+  const seqImgId = state.locationSequence[state.sequenceIndex] || 'about';
+  state.sequenceIndex = Math.min(state.sequenceIndex + 1, state.locationSequence.length);
+  const img = ASSETS[seqImgId] ? ASSETS[seqImgId] : ASSETS['about'];
+  // replace back with actual location card
+  back.dataset.type = 'location';
+  back.style.backgroundImage = `url('${img}')`;
+  // store opened location with pos as dir so future navigation can reference
+  const id = seqImgId;
+  back.dataset.id = id;
+  back.dataset.pos = dir;
+  state.openedLocations.push({id:id, el:back, pos:dir});
+  state.cursorLocation = id;
+  trackerText.innerText = displayNameForId(id);
+
+  // attach click handler for applying effect when clicking location
+  back.addEventListener('click', ()=> applyLocationAction(id, back));
+  // after reveal, hide direction hint and set right hint
+  updateRightHint('Доступные действия: применить эффект локации');
+}
+
+/* Returns display-friendly name for IDs */
+function displayNameForId(id){
+  const map = {
+    'start': 'Стартовая локация',
+    'about': 'О локации (об игре)',
+    'purpose': 'Для кого и зачем',
+    'coop': 'Сотрудничество',
+    'team': 'О команде',
+    'monster1': 'Ой-ой (монстр 1)',
+    'monster2': 'Ой-ой (монстр 2)',
+    'monster3': 'Ой-ой (монстр 3)'
+  };
+  return map[id] || id;
+}
+
+/* applyLocationAction: when clicking on location to read/activate effect - opens modal with appropriate text or fight UI */
+function applyLocationAction(id, cardEl){
+  // depending on id show content
+  if (id === 'monster1' || id === 'monster2' || id === 'monster3') {
+    // show fight UI modal
+    openFightModal(id, cardEl);
+  } else if (id === 'about') {
+    openTextModal('На этой локации применяется эффект: «получение сакральных знаний»', aboutText());
+  } else if (id === 'purpose') {
+    openTextModal('На этой локации применяется эффект: «приоткрыть завесу тайны»', purposeText());
+  } else if (id === 'coop') {
+    openTextModal('На этой локации применяется эффект: «стать друзьями»', coopText());
+  } else if (id === 'team') {
+    openTextModal('На этой локации применяется эффект: «завершить сюжетную арку «знакомство»', teamText());
+  } else if (id === 'start') {
+    openTextModal('На этой локации применяется эффект: «начать игру на знакомство»', 'Это стартовая локация. Нажмите на карту направлений чтобы двигаться.');
+  } else {
+    openTextModal('Эффект локации', 'Описание локации...');
+  }
+}
+
+/* openTextModal: displays a scrollable modal with text content */
+function openTextModal(title, text){
+  modalContent.innerHTML = `<h3 style="margin-top:0">${title}</h3><div style="white-space:pre-line;">${text}</div>`;
+  modal.classList.add('show');
+}
+
+/* close modal handler */
+modalClose.addEventListener('click', ()=> {
+  modal.classList.remove('show');
+  updateRightHint('Доступные действия: выложить карты локации');
+});
+
+/* About/purpose/coop/team text content functions */
+function aboutText(){
+  return `ЛОР
+Сеттинг – временной период после русско-японской войны
+Бэкграунд игрового цикла – солдат, вернувшийся с войны во снах видит кошмары, где сражается с японскими мифическими существами.
+Таким образом игра представляет собой борьбу с внутренними монстрами (ПТСР) и,  в зависимости от исхода партии,  исцеление или безумие героя
+Формат игры – один против всех. Герой против трех монстров
+
+ИГРОВОЙ ЦИКЛ
+Фаза 1. «Погружение в сон»
+> Герой выкладывает необходимое количество карт локаций так, чтобы все стороны одной из уже выложенных карт были «закрыты» другими картами
+Фаза 2. «Пора бежать»
+> Все игроки набирают по четыре карты направлений
+Фаза 3. «Муки выбора»
+> Игроки принимают решение куда идти и выкладывают соответствующую карту направления взакрытую.
+Фаза 4. «Столкновение»
+> Карты направлений вскрываются. Проверяется произошло ли столкновение.
+>> Если не произошло –переход к фазе «погружение в сон»
+>> Если произошло – игроки, оказавшиеся на одной локации начинают сражение
+Фаза 5. «Сражение»
+> Сражающиеся бросают кубы, при желании используют доп. карточки. Победившая сторона получает свой эффект карточки локации
+Далее игроки возвращаются к первой фазе.`;
+}
+function purposeText(){
+  return `Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душой компании. Мы создаём игру, которая станет его новым козырем в коллекции.
+
+Наша игра идеально подойдёт для трёх сегментов игроков:
+- Стратеги и тактики...
+- Фанаты мифологии...
+- Визуалы и эстеты...
+
+Кому понравится? (Смежный игровой опыт):
+Если вы играли в: 
+«Ярость дракулы», 
+«Шепот за стеной»,
+«Нечто», 
+«Тираны подземья», 
+«Иниш», 
+«Кто накормит кракена?». 
+То вероятнее всего, вам порекомендуют «Сон журавля».`;
+}
+function coopText(){
+  return `Что мы предлагаем партнёру-издателю:
+Готовый, протестированный концепт
+Мы предлагаем прототип настольной игры с продуманным дизайном карт, правилами и готовой визуальной концепцией. Весь предпродакшн — на нас.
+
+Уникальное трансмедийное преимущество...
+(сокращено: см. полную версию в презентации)`;
+}
+function teamText(){
+  return `Мы – KRAW Studio. Группа инициативных любителей настольных игр (и не только)
+
+Настольная игра: 
+Анастасия Оглы, Павел Алексеев — гейм-дизайнеры
+Александра Юрченко и Олеся Кан — графические дизайнеры
+Александра Волкова — нарративный дизайнер
+
+Компьютерная игра:
+Максим Усачев — автор идеи, разработчик.
+Никита Старков — саунд-дизайнер.
+Дарья Горбунова — левел-дизайнер.
+
+Контакты:
+Почта: мяумяу
+Наши тг: гав гав`;
+}
+
+/* ========= FIGHT LOGIC =========== */
+
+function openFightModal(monsterId, locationEl){
+  // prepare modal content depending on monster
+  let monsterText = '';
+  let monsterPower = 10;
+  if (monsterId === 'monster1'){ monsterText = 'Вы выходите из чащи на краю заброшенного рисового поля...'; monsterPower = 10; }
+  if (monsterId === 'monster2'){ monsterText = 'Пройдя заросший двор, вы замечаете...'; monsterPower = 11; }
+  if (monsterId === 'monster3'){ monsterText = 'Вы пробираетесь сквозь частокол высохших стеблей...'; monsterPower = 12; }
+
+  // build fight UI
+  modalContent.innerHTML = `<h3>Ой-ой, кажется вас нагнал монстр</h3>
+  <div style="white-space:pre-line">${monsterText}</div>
+  <div style="margin-top:12px"><strong>Сила противника – ${monsterPower}</strong></div>
+  <div id="fightArea" style="margin-top:12px;"></div>
+  `;
+
+  const fightArea = document.getElementById('fightArea');
+  // determine available buttons based on player's items
+  const hasSword = state.items.includes('sword');
+  const hasDoll  = state.items.includes('doll');
+  const hasAmulet = state.items.includes('amulet');
+
+  if (monsterId === 'monster1') {
+    // only attack button; suggestion to use doll if fail
+    const attackBtn = document.createElement('button');
+    attackBtn.textContent = 'бросить кубики, чтобы атаковать';
+    attackBtn.className = 'close-btn';
+    attackBtn.onclick = ()=> {
+      const r1 = rollDie(); const r2 = rollDie();
+      fightArea.innerHTML = `<div>результат бросков: ${r1} и ${r2}.</div>`;
+      if (r1 + r2 <= Math.floor(monsterPower/2)){ // treat as fail
+        fightArea.innerHTML += '<div>Кажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!</div>';
+        // if doll exists, show clickable item in modal to use
+        if (hasDoll) {
+          const useDollBtn = document.createElement('button');
+          useDollBtn.textContent = 'Использовать куколку-оберег';
+          useDollBtn.className = 'close-btn';
+          useDollBtn.style.marginTop='8px';
+          useDollBtn.onclick = ()=> {
+            // consume doll
+            removeItem('doll');
+            fightArea.innerHTML = '';
+            // activate attack again
+            attackBtn.disabled = false;
+            // remove doll card from itemStack visual
+            renderItemStack();
+          };
+          fightArea.appendChild(useDollBtn);
+        }
+      } else {
+        // success on second roll scenario is handled by user using item then pressing attack again; but here assume success if sum >= threshold
+        // apply reward: give sword
+        fightArea.innerHTML += '<div>Другое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации «Получить оружие».</div>';
+        giveItem('sword');
+        renderItemStack();
+      }
+    };
+    fightArea.appendChild(attackBtn);
+  } else if (monsterId === 'monster2') {
+    // two buttons: fight bare hands or use sword
+    const hands = document.createElement('button');
+    hands.textContent = 'Биться голыми руками';
+    hands.className = 'close-btn';
+    hands.onclick = ()=> {
+      showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'fists'});
+    };
+    fightArea.appendChild(hands);
+
+    if (hasSword){
+      const useSword = document.createElement('button');
+      useSword.textContent = 'Использовать Меч-кладенец';
+      useSword.className = 'close-btn';
+      useSword.style.marginLeft='8px';
+      useSword.onclick = ()=> {
+        // sword-based attack: enable attack button
+        showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'sword'});
+        // sword will be consumed in success branch
+      };
+      fightArea.appendChild(useSword);
+    } else {
+      const hint = document.createElement('div');
+      hint.style.marginTop='8px';
+      hint.textContent = 'У вас нет Меч-кладенца — попробуйте биться голыми руками или использовать амулет для побега.';
+      fightArea.appendChild(hint);
+    }
+
+  } else if (monsterId === 'monster3') {
+    // if player has sword then show both choices, else only throw dice and encourage using amulet to escape on fail
+    const hands = document.createElement('button');
+    hands.textContent = 'Биться голыми руками';
+    hands.className = 'close-btn';
+    hands.onclick = ()=> {
+      showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'fists'});
+    };
+    fightArea.appendChild(hands);
+
+    if (hasSword){
+      const useSword = document.createElement('button');
+      useSword.textContent = 'Использовать Меч-кладенец';
+      useSword.className = 'close-btn';
+      useSword.style.marginLeft='8px';
+      useSword.onclick = ()=> {
+        showAttackRoll(monsterPower, fightArea, locationEl, {weapon: 'sword'});
+      };
+      fightArea.appendChild(useSword);
+    } else {
+      const hint = document.createElement('div');
+      hint.style.marginTop='8px';
+      hint.textContent = 'Если нет меча — вы можете попытаться бросить кубики, но, возможно, придётся использовать амулет для побега.';
+      fightArea.appendChild(hint);
+    }
+  }
+
+  modal.classList.add('show');
+}
+
+/* helper: roll a single die 1..6 */
+function rollDie(){ return Math.floor(Math.random()*6) + 1; }
+
+/* show attack roll and process results */
+function showAttackRoll(monsterPower, fightArea, locationEl, opts={weapon:'fists'}){
+  fightArea.innerHTML = '';
+  const r1 = rollDie(), r2 = rollDie();
+  fightArea.innerHTML = `<div>результат бросков: ${r1} и ${r2}.</div>`;
+  const total = r1 + r2;
+  // simple success criteria: if total >= 8 OR if both dice equal (crit) success
+  const success = (total >= 10) || (r1===r2 && r1>=5) || (opts.weapon==='sword' && total >= 8);
+  if (!success) {
+    // if fail suggest using amulet if present
+    if (state.items.includes('amulet')) {
+      const useAm = document.createElement('button');
+      useAm.textContent = 'Использовать амулет, чтобы сбежать';
+      useAm.className = 'close-btn';
+      useAm.style.marginTop='8px';
+      useAm.onclick = ()=>{
+        removeItem('amulet');
+        renderItemStack();
+        fightArea.innerHTML = 'Вы использовали амулет и ушли с локации. Выберите направление чтобы переместиться.';
+        modal.classList.remove('show');
+      };
+      fightArea.appendChild(useAm);
+    } else {
+      fightArea.innerHTML += '<div>Ничего страшного! Неудача — часть приключения. Попробуйте другое действие.</div>';
+    }
+  } else {
+    // success: reward depending on monster / location -> give sword or amulet
+    if (!state.items.includes('sword')) {
+      giveItem('sword');
+      fightArea.innerHTML += '<div>За победу над монстром применяется эффект локации: Получить оружие (Меч-кладенец).</div>';
+      renderItemStack();
+    } else {
+      // if already have sword, give amulet
+      giveItem('amulet');
+      fightArea.innerHTML += '<div>Вы получили Амулет.</div>';
+      renderItemStack();
+    }
+    // remove monster card visually (or mark defeated)
+    setTimeout(()=> {
+      modal.classList.remove('show');
+    }, 1200);
+  }
+}
+
+/* giveItem: adds to state and places visual in the right stack */
+function giveItem(itemId){
+  if (!state.items.includes(itemId)) state.items.push(itemId);
+}
+
+/* removeItem */
+function removeItem(itemId){
+  const idx = state.items.indexOf(itemId);
+  if (idx !== -1) state.items.splice(idx,1);
+}
+
+/* render the item stack on right according to state.items */
+function renderItemStack(){
+  itemStack.innerHTML = '';
+  // for each item, create a hidden card at right offset (stack)
+  state.items.forEach((it, idx) => {
+    const stackItem = el('div','item');
+    stackItem.dataset.item = it;
+    const asset = (it==='doll'? ASSETS['item-doll'] : it==='sword'? ASSETS['item-sword'] : ASSETS['item-amulet']);
+    stackItem.style.backgroundImage = `url('${asset}')`;
+    stackItem.style.marginTop = (idx * 12) + 'px';
+    stackItem.addEventListener('click', ()=> {
+      // when clicked in stack, peek and allow usage depending on context (for prototype simply toggle peek)
+      stackItem.classList.toggle('peek');
+    });
+    itemStack.appendChild(stackItem);
+  });
+}
+
+/* useItemFromStack used during interactions (like using doll in monster1 scenario) */
+function useItemFromStack(itemId){
+  if (!state.items.includes(itemId)) return;
+  // show effect demo (remove item and show a message)
+  removeItem(itemId);
+  renderItemStack();
+  showUnderCardsHint(`Вы использовали предмет: ${itemId}`);
+  setTimeout(()=> { if (underHintEl) { underHintEl.remove(); underHintEl=null; } }, 1800);
+}
+
+/* ======= EVENTS wiring ======= */
+
+/* Deck click handler */
+deckEl.addEventListener('click', ()=> {
+  if (!state.deckMoved) {
+    onDeckFirstClick();
+    return;
+  }
+  // if deck already moved, clicking deals new face-down location cards (from deck)
+  dealSurroundingLocations();
+});
+
+/* directions click handlers */
+document.getElementById('dirUp').addEventListener('click', ()=> { revealLocationAtDirection('up'); });
+document.getElementById('dirDown').addEventListener('click', ()=> { revealLocationAtDirection('down'); });
+document.getElementById('dirLeft').addEventListener('click', ()=> { revealLocationAtDirection('left'); });
+document.getElementById('dirRight').addEventListener('click', ()=> { revealLocationAtDirection('right'); });
+
+/* Apply location action map (called when location is clicked) */
+function openLocationEffect(id){
+  applyLocationAction(id);
+}
+
+/* applyLocationAction wrapper that also sets hints and triggers special sequenced events described in the scenario */
+function applyLocationAction(id, elRef){
+  applyLocationActionCore(id, elRef);
+}
+
+function applyLocationActionCore(id, elRef){
+  // reuse previous function but also check for sequence-specific actions
+  applyLocationAction(id, elRef);
+}
+
+/* helper: when using modal's "Вернуться к игре" closing, ensure right hint restored */
+modal.addEventListener('transitionend', ()=> {
+  // no-op
+});
+
+/* initial render of item stack (empty) */
+renderItemStack();
+
+/* small UX: clicking outside modal does not close (to avoid accidental dismiss). close only by button. */
+
+/* ======= EXTRA: expose some debug functions on window for quick testing (optional) ======= */
+window._state = state;
+window._reveal = revealLocationAtDirection;
+window._giveItem = (id)=> { giveItem(id); renderItemStack(); };
+
+/* End of script */
+</script>
 </body>
 </html>
