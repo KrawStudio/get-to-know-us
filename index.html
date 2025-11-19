@@ -78,11 +78,12 @@
             height: 220px;
         }
         
-        /* Колода в левом нижнем углу */
+        /* Колода - начальное положение в центре */
         .deck {
             position: absolute;
-            left: 20px;
-            bottom: 20px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 220px;
             height: 220px;
             background-image: url('assets/back.png');
@@ -91,6 +92,7 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
             cursor: pointer;
             z-index: 5;
+            transition: all 0.8s ease;
         }
         
         /* Подсказки */
@@ -105,7 +107,6 @@
             z-index: 10;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            white-space: pre-line;
         }
         
         .hint-close {
@@ -118,10 +119,9 @@
         }
         
         .hint-right {
-            left: 250px; /* 20px (отступ колоды) + 220px (ширина колоды) + 10px (доп. отступ) */
-            bottom: 20px;
-            top: auto;
-            transform: none;
+            left: calc(50% + 120px); /* Справа от колоды в центре */
+            top: 50%;
+            transform: translateY(-50%);
         }
         
         .hint-bottom {
@@ -265,26 +265,16 @@
             max-width: 500px;
             z-index: 10;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            white-space: pre-line;
         }
         
         /* Скрытые карты */
-        .hidden-card {
-            transform: translateX(80%) rotate(-90deg);
-            transition: transform 0.5s ease;
-        }
-        
-        .hidden-card:hover {
-            transform: translateX(60%) rotate(-90deg);
-        }
-        
         .hidden-direction {
-            transform: translateY(80%);
+            transform: translateY(95%); /* Карты направлений сильнее задвинуты */
             transition: transform 0.5s ease;
         }
         
         .hidden-direction:hover {
-            transform: translateY(60%);
+            transform: translateY(85%); /* При наведении выдвигаются меньше */
         }
         
         /* Анимации */
@@ -306,7 +296,7 @@
         }
         
         #item-doll:hover {
-            transform: rotate(-90deg) translateX(60%);
+            transform: rotate(-90deg) translateX(60%) translateY(-20px); /* Выдвигается влево и вверх */
         }
     </style>
 </head>
@@ -322,13 +312,13 @@
         <div class="deck" id="deck"></div>
         
         <!-- Подсказки -->
-        <div class="hint hint-right" id="hint-right" style="display: none;">
+        <div class="hint hint-right" id="hint-right">
             <span class="hint-close" onclick="closeHint('hint-right')">×</span>
-            Доступные действия:\n&lt;&lt;&lt; Выложить новые карты локаций
+            <<< Выложить стартовую локацию
         </div>
         <div class="hint hint-bottom" id="hint-bottom" style="display: none;">
             <span class="hint-close" onclick="closeHint('hint-bottom')">×</span>
-            Доступные действия: Выбрать направление\n<span style="line-height: 0.5;">V\nV</span>
+            <span id="hint-bottom-text"></span>
         </div>
         
         <!-- Трекер локации -->
@@ -375,6 +365,7 @@
         const deck = document.getElementById('deck');
         const hintRight = document.getElementById('hint-right');
         const hintBottom = document.getElementById('hint-bottom');
+        const hintBottomText = document.getElementById('hint-bottom-text');
         const locationTracker = document.getElementById('location-tracker');
         const modal = document.getElementById('modal');
         const modalTitle = document.getElementById('modal-title');
@@ -402,6 +393,13 @@
         // Показать подсказку справа
         function showHintRight() {
             hintRight.style.display = 'block';
+            // Обновляем текст подсказки в зависимости от фазы игры
+            if (gameState.phase === 'afterStart' || gameState.phase === 'afterAbout' || 
+                gameState.phase === 'afterMonster1' || gameState.phase === 'afterPurpose' ||
+                gameState.phase === 'afterMonster2' || gameState.phase === 'afterCoop' ||
+                gameState.phase === 'afterMonster3') {
+                hintRight.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-right\')">×</span>Доступные действия: <<< Выложить новые карты локаций';
+            }
         }
 
         // Скрыть подсказку справа
@@ -423,6 +421,8 @@
         function handleDeckClick() {
             // Скрываем подсказку справа при нажатии на колоду
             hideHintRight();
+            // Скрываем подсказку снизу с эффектами локации
+            hideHintBottom();
 
             switch(gameState.phase) {
                 case 'start':
@@ -454,7 +454,11 @@
 
         // Начало игры
         function startGame() {
-            // Перемещаем колоду в левый нижний угол (уже в стилях)
+            // Перемещаем колоду в левый нижний угол
+            deck.style.left = '20px';
+            deck.style.bottom = '20px';
+            deck.style.top = 'auto';
+            deck.style.transform = 'translate(0, 0)';
             
             // Обновляем заголовки
             setTimeout(() => {
@@ -491,9 +495,8 @@
                 }, 500);
                 
                 // Обновляем подсказки
-                showHintRight();
-                hintBottom.style.display = 'block';
-                hintBottom.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-bottom\')">×</span>Эффект: начать игру на знакомство\nПолученные предметы: куколка-оберег';
+                showHintBottom();
+                hintBottomText.innerHTML = 'Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
@@ -537,7 +540,7 @@
             // Для куколки добавляем обработчик наведения
             if (itemType === 'doll') {
                 itemCard.addEventListener('mouseenter', () => {
-                    itemCard.style.transform = 'rotate(-90deg) translateX(60%)';
+                    itemCard.style.transform = 'rotate(-90deg) translateX(60%) translateY(-20px)';
                 });
                 itemCard.addEventListener('mouseleave', () => {
                     itemCard.style.transform = 'rotate(-90deg) translateX(80%)';
@@ -610,6 +613,7 @@
             
             // Показываем подсказку снизу
             showHintBottom();
+            hintBottomText.innerHTML = 'Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
             
             gameState.phase = 'locationCardsPlaced';
         }
@@ -720,7 +724,7 @@
                     
                     // Показываем подсказку
                     hintBottom.style.display = 'block';
-                    hintBottom.textContent = 'Доступные действия: выбрать карту направления';
+                    hintBottomText.textContent = 'Доступные действия: выбрать карту направления';
                     
                     // Обновляем фазу игры
                     updateGamePhase();
@@ -789,7 +793,7 @@
                     
                     // Показываем подсказку
                     hintBottom.style.display = 'block';
-                    hintBottom.textContent = 'Доступные действия: Применить эффект локации';
+                    hintBottomText.textContent = 'Доступные действия: Применить эффект локации';
                 } else if (locationType.includes('monster')) {
                     locationCard.addEventListener('click', () => {
                         showMonsterBattle(locationType);
@@ -799,11 +803,11 @@
                     setTimeout(() => {
                         hintBottom.style.display = 'block';
                         if (locationType === 'monster1') {
-                            hintBottom.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
+                            hintBottomText.textContent = 'Ой-ой, кажется вас нагнал монстр\nДоступные действия: сразиться';
                         } else if (locationType === 'monster2') {
-                            hintBottom.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
+                            hintBottomText.textContent = 'Ой-ой, кажется вы снова наткнулись на монстра\nДоступные действия: сразиться';
                         } else if (locationType === 'monster3') {
-                            hintBottom.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
+                            hintBottomText.textContent = 'Ой-ой, никогда такого не было, и вот опять…\nДоступные действия: сразиться';
                         }
                     }, 1000);
                 }
@@ -907,7 +911,7 @@
                         
                         <p>Наша игра идеально подойдёт для трёх сегментов игроков:</p>
                         
-                        <p><strong>Стратеги и тактики.</strong> Тем, кто любит выстраивать стратегии, комбинировать карты и наслаждаться чувством контроля над сложной системой.</p>
+                        <p><strong>Стратеги и тактики.</strong> Тем, кто любим выстраивать стратегии, комбинировать карты и наслаждаться чувством контроля над сложной системой.</p>
                         
                         <p><strong>Фанаты мифологии.</strong> Те, кто изучает культуру стран, любит погружаться в атмосферные сеттинги. Это люди, которые увлекаются русским и/или японским фольклором, а еще оценят их тонкое переплетение.</p>
                         
@@ -1079,7 +1083,7 @@
                     showItem('sword');
                     
                     // Обновляем подсказки
-                    hintRight.textContent = 'Доступные действия: выложить карты локаций';
+                    hintRight.textContent = 'Доступные действия: <<< Выложить новые карты локаций';
                     hintBottom.style.display = 'none';
                     
                     // Скрываем кнопки сражения
@@ -1104,7 +1108,7 @@
                 showItem('amulet');
                 
                 // Обновляем подсказки
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+                hintRight.textContent = 'Доступные действия: <<< Выложить новые карты локаций';
                 hintBottom.style.display = 'none';
                 
                 // Скрываем кнопки сражения
@@ -1138,7 +1142,7 @@
                 showItem('amulet');
                 
                 // Обновляем подсказки
-                hintRight.textContent = 'Доступные действия: выложить карты локаций';
+                hintRight.textContent = 'Доступные действия: <<< Выложить новые карты локаций';
                 hintBottom.style.display = 'none';
                 
                 // Скрываем кнопки сражения
@@ -1187,7 +1191,7 @@
             
             // Показываем подсказку для выбора направления
             hintBottom.style.display = 'block';
-            hintBottom.textContent = 'Доступные действия: выбрать карту направления';
+            hintBottomText.textContent = 'Доступные действия: выбрать карту направления';
             
             // Скрываем кнопки сражения
             battleButtons.style.display = 'none';
