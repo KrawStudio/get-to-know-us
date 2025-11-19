@@ -15,7 +15,7 @@
         
         body {
             font-family: 'Playfair Display', serif;
-            background-image: url('wood.png');
+            background-image: url('assets/wood.png');
             background-size: cover;
             background-position: center;
             height: 100vh;
@@ -33,7 +33,7 @@
         /* Заголовки */
         .title-container {
             position: absolute;
-            top: 20px;
+            top: 40px;
             left: 0;
             width: 100%;
             text-align: center;
@@ -46,32 +46,35 @@
             font-weight: 700;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            letter-spacing: 2px;
         }
         
         .subtitle {
             font-size: 24px;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+            letter-spacing: 1px;
         }
         
         /* Карты */
         .card {
             position: absolute;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
             transition: all 0.8s ease;
             cursor: pointer;
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
         }
         
         .location-card {
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
         }
         
         .item-card, .direction-card {
-            width: 140px;
-            height: 200px;
+            width: 150px;
+            height: 220px;
         }
         
         .deck {
@@ -79,12 +82,12 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 140px;
-            height: 200px;
-            background-image: url('back.png');
+            width: 150px;
+            height: 220px;
+            background-image: url('assets/back.png');
             background-size: cover;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
             cursor: pointer;
             z-index: 5;
             transition: all 0.8s ease;
@@ -93,39 +96,43 @@
         /* Подсказки */
         .hint {
             position: absolute;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 16px;
-            max-width: 250px;
-            line-height: 1.4;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            max-width: 300px;
+            line-height: 1.5;
             z-index: 10;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .hint-right {
-            right: 20px;
+            right: 30px;
             top: 50%;
             transform: translateY(-50%);
         }
         
         .hint-bottom {
-            bottom: 80px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
+            width: 80%;
+            max-width: 600px;
         }
         
         /* Трекер локации */
         .location-tracker {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 16px;
+            top: 30px;
+            left: 30px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 18px;
             z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         /* Модальное окно */
@@ -135,7 +142,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.9);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -151,75 +158,99 @@
         }
         
         .modal-content {
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #333;
-            padding: 30px;
-            border-radius: 12px;
-            max-width: 600px;
+            background-color: rgba(30, 20, 10, 0.95);
+            color: #e8d8c0;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 700px;
             max-height: 80vh;
             overflow-y: auto;
             position: relative;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+            border: 2px solid #8B4513;
+            font-size: 18px;
+            line-height: 1.6;
         }
         
         .modal h2 {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            font-size: 32px;
+            text-align: center;
+            color: #d4af37;
+        }
+        
+        .modal h3 {
+            margin: 20px 0 10px;
+            color: #d4af37;
             font-size: 24px;
         }
         
         .modal p {
             margin-bottom: 15px;
-            line-height: 1.6;
         }
         
         .modal button {
             background-color: #8B4513;
-            color: white;
+            color: #e8d8c0;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 25px;
+            border-radius: 8px;
             cursor: pointer;
             font-family: 'Playfair Display', serif;
-            font-size: 16px;
-            margin-top: 10px;
+            font-size: 18px;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            transition: background-color 0.3s;
+        }
+        
+        .modal button:hover {
+            background-color: #a0522d;
         }
         
         /* Кнопки сражения */
         .battle-buttons {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 15px;
+            gap: 20px;
             z-index: 10;
         }
         
         .battle-button {
             background-color: rgba(139, 69, 19, 0.9);
-            color: white;
+            color: #e8d8c0;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 25px;
+            border-radius: 8px;
             cursor: pointer;
             font-family: 'Playfair Display', serif;
-            font-size: 16px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s;
+        }
+        
+        .battle-button:hover {
+            background-color: rgba(160, 82, 45, 0.9);
         }
         
         /* Результат броска */
         .roll-result {
             position: absolute;
-            bottom: 80px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 16px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 18px;
             text-align: center;
-            max-width: 400px;
+            max-width: 500px;
             z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         /* Скрытые карты */
@@ -240,21 +271,65 @@
         .hidden-direction:hover {
             transform: translateY(60%);
         }
+        
+        /* Эффекты текста */
+        .location-name {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            color: #d4af37;
+            z-index: 5;
+        }
+        
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease;
+        }
+        
+        /* Контейнер для карт локаций вокруг центральной */
+        .location-grid {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 660px;
+            height: 660px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .grid-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
         <!-- Заголовки -->
         <div class="title-container">
-            <h1 class="title">Сон Журавля</h1>
-            <p class="subtitle">Узнайте нас лучше</p>
+            <h1 class="title">СОН ЖУРАВЛЯ</h1>
+            <p class="subtitle">узнайте нас лучше</p>
         </div>
         
         <!-- Колода -->
         <div class="deck" id="deck"></div>
         
         <!-- Подсказки -->
-        <div class="hint hint-right" id="hint-right"><<< Выложить стартовую локацию</div>
+        <div class="hint hint-right" id="hint-right">&lt;&lt;&lt; Выложить стартовую локацию</div>
         <div class="hint hint-bottom" id="hint-bottom" style="display: none;"></div>
         
         <!-- Трекер локации -->
@@ -264,7 +339,7 @@
         <div class="modal" id="modal">
             <div class="modal-content">
                 <h2 id="modal-title"></h2>
-                <p id="modal-text"></p>
+                <div id="modal-text"></div>
                 <button id="modal-close">Вернуться к игре</button>
             </div>
         </div>
@@ -274,6 +349,9 @@
         
         <!-- Кнопки сражения -->
         <div class="battle-buttons" id="battle-buttons" style="display: none;"></div>
+        
+        <!-- Контейнер для карт локаций -->
+        <div class="location-grid" id="location-grid" style="display: none;"></div>
     </div>
 
     <script>
@@ -286,7 +364,8 @@
             phase: 'start',
             monster1Defeated: false,
             monster2Defeated: false,
-            monster3Defeated: false
+            monster3Defeated: false,
+            locationGrid: {}
         };
 
         // DOM элементы
@@ -301,6 +380,7 @@
         const rollResult = document.getElementById('roll-result');
         const battleButtons = document.getElementById('battle-buttons');
         const titleContainer = document.querySelector('.title-container');
+        const locationGrid = document.getElementById('location-grid');
 
         // Обработчик клика на колоду
         deck.addEventListener('click', handleDeckClick);
@@ -363,36 +443,46 @@
         function showStartLocation() {
             // Создаем карту стартовой локации
             const startCard = document.createElement('div');
-            startCard.className = 'card location-card';
-            startCard.style.backgroundImage = 'url("start.png")';
+            startCard.className = 'card location-card fade-in';
+            startCard.style.backgroundImage = 'url("assets/start.png")';
             startCard.style.left = '50%';
             startCard.style.top = '50%';
             startCard.style.transform = 'translate(-50%, -50%)';
             startCard.style.opacity = '0';
+            startCard.id = 'location-start';
             document.querySelector('.game-container').appendChild(startCard);
+            
+            // Добавляем название локации
+            const locationName = document.createElement('div');
+            locationName.className = 'location-name';
+            locationName.textContent = 'СТАРТОВАЯ ЛОКАЦИЯ';
+            startCard.appendChild(locationName);
             
             // Анимация появления
             setTimeout(() => {
                 startCard.style.opacity = '1';
                 
                 // Показываем карту предмета
-                showItem('doll');
+                setTimeout(() => {
+                    showItem('doll');
+                }, 500);
                 
                 // Обновляем подсказки
-                hintRight.textContent = 'Доступные действия:\n<<<Выложить новые карты локаций';
+                hintRight.innerHTML = 'Доступные действия:<br>&lt;&lt;&lt; Выложить новые карты локаций';
                 hintBottom.style.display = 'block';
-                hintBottom.innerHTML = 'Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
+                hintBottom.innerHTML = 'Эффект: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
+                updateLocationTracker('Стартовая локация');
             }, 300);
         }
 
         // Показать карту предмета
         function showItem(itemType) {
             const itemCard = document.createElement('div');
-            itemCard.className = 'card item-card';
-            itemCard.style.backgroundImage = `url("item-${itemType}.png")`;
+            itemCard.className = 'card item-card fade-in';
+            itemCard.style.backgroundImage = `url("assets/item-${itemType}.png")`;
             itemCard.style.left = '60%';
             itemCard.style.top = '50%';
             itemCard.style.transform = 'translate(-50%, -50%)';
@@ -421,25 +511,31 @@
             // Скрываем заголовок
             titleContainer.style.opacity = '0';
             
-            // Создаем 4 карты локаций
+            // Создаем сетку для карт локаций
+            locationGrid.style.display = 'grid';
+            
+            // Создаем 4 карты локаций вокруг центра
             const positions = [
-                { left: '50%', top: '30%', transform: 'translate(-50%, -50%)' }, // сверху
-                { left: '70%', top: '50%', transform: 'translate(-50%, -50%)' }, // справа
-                { left: '50%', top: '70%', transform: 'translate(-50%, -50%)' }, // снизу
-                { left: '30%', top: '50%', transform: 'translate(-50%, -50%)' }  // слева
+                { row: 1, col: 2 }, // сверху
+                { row: 2, col: 3 }, // справа
+                { row: 3, col: 2 }, // снизу
+                { row: 2, col: 1 }  // слева
             ];
             
             positions.forEach((pos, index) => {
+                const gridCell = document.createElement('div');
+                gridCell.className = 'grid-cell';
+                gridCell.dataset.row = pos.row;
+                gridCell.dataset.col = pos.col;
+                locationGrid.appendChild(gridCell);
+                
                 const locationCard = document.createElement('div');
                 locationCard.className = 'card location-card';
-                locationCard.style.backgroundImage = 'url("back.png")';
-                locationCard.style.left = pos.left;
-                locationCard.style.top = pos.top;
-                locationCard.style.transform = pos.transform;
+                locationCard.style.backgroundImage = 'url("assets/back.png")';
                 locationCard.style.opacity = '0';
                 locationCard.dataset.position = index;
                 locationCard.dataset.location = 'about'; // Все ведут к карте "об игре"
-                document.querySelector('.game-container').appendChild(locationCard);
+                gridCell.appendChild(locationCard);
                 
                 // Анимация появления
                 setTimeout(() => {
@@ -458,7 +554,7 @@
             showDirectionCards();
             
             // Обновляем подсказки
-            hintBottom.textContent = 'Доступные действия: выбрать направление';
+            hintBottom.textContent = 'Доступные действия: Выбрать направление';
             
             gameState.phase = 'locationCardsPlaced';
         }
@@ -467,16 +563,16 @@
         function showDirectionCards() {
             const directions = ['up', 'right', 'down', 'left'];
             const positions = [
-                { left: '40%', bottom: '10%' },
-                { left: '50%', bottom: '10%' },
-                { left: '60%', bottom: '10%' },
-                { left: '70%', bottom: '10%' }
+                { left: '35%', bottom: '10%' },
+                { left: '45%', bottom: '10%' },
+                { left: '55%', bottom: '10%' },
+                { left: '65%', bottom: '10%' }
             ];
             
             directions.forEach((dir, index) => {
                 const directionCard = document.createElement('div');
                 directionCard.className = 'card direction-card hidden-direction';
-                directionCard.style.backgroundImage = `url("direction-${dir}.png")`;
+                directionCard.style.backgroundImage = `url("assets/direction-${dir}.png")`;
                 directionCard.style.left = positions[index].left;
                 directionCard.style.bottom = positions[index].bottom;
                 directionCard.dataset.direction = dir;
@@ -528,7 +624,18 @@
             }
             
             // Обновляем трекер локации
-            updateLocationTracker(targetLocation);
+            const locationNames = {
+                'start': 'Стартовая локация',
+                'about': 'Об игре',
+                'monster1': 'Встреча с первым монстром',
+                'purpose': 'Для кого и зачем',
+                'monster2': 'Встреча со вторым монстром',
+                'coop': 'Сотрудничество',
+                'monster3': 'Встреча с третьим монстром',
+                'team': 'Команда'
+            };
+            
+            updateLocationTracker(locationNames[targetLocation]);
             
             // Показываем карту локации
             showLocationCard(targetLocation);
@@ -580,8 +687,8 @@
         function showLocationCard(locationType) {
             // Создаем карту локации
             const locationCard = document.createElement('div');
-            locationCard.className = 'card location-card';
-            locationCard.style.backgroundImage = `url("card-${locationType}.png")`;
+            locationCard.className = 'card location-card fade-in';
+            locationCard.style.backgroundImage = `url("assets/card-${locationType}.png")`;
             locationCard.style.left = '50%';
             locationCard.style.top = '50%';
             locationCard.style.transform = 'translate(-50%, -50%)';
@@ -601,7 +708,7 @@
                     
                     // Показываем подсказку
                     hintBottom.style.display = 'block';
-                    hintBottom.textContent = 'Доступные действия: применить эффект локации';
+                    hintBottom.textContent = 'Доступные действия: Применить эффект локации';
                 } else if (locationType.includes('monster')) {
                     locationCard.addEventListener('click', () => {
                         showMonsterBattle(locationType);
@@ -616,21 +723,88 @@
             
             switch(locationType) {
                 case 'about':
-                    title = 'Об игре';
-                    text = 'На этой локации применяется эффект: «получение сакральных знаний»';
+                    title = 'ОБ ИГРЕ';
+                    text = `
+                        <h3>ЛОР</h3>
+                        <p>Сеттинг – временной период после русско-японской войны<br>
+                        Бэкграунд игрового цикла – солдат, вернувшийся с войны во снах видит кошмары, где сражается с японскими мифическими существами.</p>
+                        
+                        <p>Таким образом игра представляет собой борьбу с внутренними монстрами (ПТСР) и, в зависимости от исхода партии, исцеление или безумие героя<br>
+                        Формат игры – один против всех. Герой против трех монстров</p>
+                        
+                        <p>На этой локации применяется эффект: «получение сакральных знаний»</p>
+                        
+                        <h3>ИГРОВОЙ ЦИКЛ</h3>
+                        
+                        <p><strong>Фаза «Погружение в сон»</strong><br>
+                        > Герой выкладывает необходимое количество карт локаций так, чтобы все стороны одной из уже выложенных карт были «закрыты» другими картами</p>
+                        
+                        <p><strong>Фаза «Пора бежать»</strong><br>
+                        > Все игроки набирают по четыре карты направлений</p>
+                        
+                        <p><strong>Фаза «Муки выбора»</strong><br>
+                        > Игроки принимают решение куда идти и выкладывают соответствующую карту направления взакрытую.</p>
+                        
+                        <p>Дальше >>></p>
+                    `;
                     break;
                 case 'purpose':
-                    title = 'Для кого и зачем';
-                    text = 'На этой локации применяется эффект: «приоткрыть завесу тайны». Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душой компании. Мы создаём игру, которая станет его новым козырем в коллекции. Наша игра идеально подойдёт для трёх сегментов игроков: Стратеги и тактики. Тем, кто любит выстраивать стратегии, комбинировать карты и наслаждаться чувством контроля над сложной системой. Фанаты мифологии. Те, кто изучает культуру стран, любит погружаться в атмосферные сеттинги. Это люди, которые увлекаются русским и/или японским фольклором, а еще оценят их тонкое переплетение. Визуалы и эстеты. Те, для кого важен визуальный стиль. Мы создаем визуал, где старославянские узоры встречаются с лаконичной японской графикой. Кому понравится? (Смежный игровой опыт): Если вы играли в: «Ярость дракулы», «Шепот за стеной», «Нечто», «Тираны подземья», «Иниш», «Кто накормит кракена?». То вероятнее всего, вам порекомендуют «Сон журавля».';
+                    title = 'ДЛЯ КОГО И ЗАЧЕМ';
+                    text = `
+                        <p>На этой локации применяется эффект: «приоткрыть завесу тайны».</p>
+                        
+                        <p>Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душой компании. Мы создаём игру, которая станет его новым козырем в коллекции.</p>
+                        
+                        <p>Наша игра идеально подойдёт для трёх сегментов игроков:</p>
+                        
+                        <p><strong>Стратеги и тактики.</strong> Тем, кто любит выстраивать стратегии, комбинировать карты и наслаждаться чувством контроля над сложной системой.</p>
+                        
+                        <p><strong>Фанаты мифологии.</strong> Те, кто изучает культуру стран, любит погружаться в атмосферные сеттинги. Это люди, которые увлекаются русским и/или японским фольклором, а еще оценят их тонкое переплетение.</p>
+                        
+                        <p><strong>Визуалы и эстеты.</strong> Те, для кого важен визуальный стиль. Мы создаем визуал, где старославянские узоры встречаются с лаконичной японской графикой.</p>
+                        
+                        <p><strong>Кому понравится? (Смежный игровой опыт):</strong><br>
+                        Если вы играли в:<br>
+                        «Ярость дракулы»,<br>
+                        «Шепот за стеной»,<br>
+                        «Нечто»,<br>
+                        «Тираны подземья»,<br>
+                        «Иниш»,<br>
+                        «Кто накормит кракена?».<br>
+                        То вероятнее всего, вам порекомендуют «Сон журавля».</p>
+                    `;
                     break;
                 case 'coop':
-                    title = 'Сотрудничество';
-                    text = 'На этой локации применяется эффект: «стать друзьями». Что мы предлагаем партнёру-издателю: Готовый, протестированный концепт. Мы предлагаем прототип настольной игры с продуманным дизайном карт, правилами и готовой визуальной концепцией. Весь предпродакшн — на нас. Уникальное трансмедийное преимущество. Параллельно мы ведём разработку компьютерной игры «Сон журавля» — это трансмедийное расширение настольной, но более нарративно насыщенная и продолжительная игра, предназначенная для личного прохождения. С точки зрения маркетинга — это хорошая возможность для кросс-промоушена. Выход компьютерной игры подогреет интерес к настольной, и наоборот. Мы создаём целый мир для нашей аудитории. Инициативная и вовлечённая команда. Мы горим своим проектом. Мы готовы активно участвовать на всех этапах: от доработки дизайна и организации тестирований до поддержки маркетинговых активностей. Будем рады стать вашими партнерами! Что мы ищем от партнёра: Экспертизу и поддержку в издании. Мы хотим работать с профессионалами, которые помогут нам вывести игру на рынок и поддержать нас на этапах производстве продукции и дистрибуции. Партнёрство в маркетинге и продвижении. Мы верим в наш продукт и готовы вкладывать силы, но нам нужна ваша мощь и опыт в том, чтобы громко заявить о себе и донести игру до нашей целевой аудитории.';
+                    title = 'СОТРУДНИЧЕСТВО';
+                    text = `
+                        <p>На этой локации применяется эффект: «стать друзьями».</p>
+                        
+                        <h3>Что мы предлагаем партнёру-издателю:</h3>
+                        
+                        <p><strong>Готовый, протестированный концепт</strong><br>
+                        Мы предлагаем прототип настольной игры с продуманным дизайном карт, правилами и готовой визуальной концепцией. Весь предпродакшн — на нас.</p>
+                        
+                        <p><strong>Уникальное трансмедийное преимущество.</strong><br>
+                        Параллельно мы ведём разработку компьютерной игры «Сон журавля» — это трансмедийное расширение настольной, но более нарративно насыщенная и продолжительная игра, предназначенная для личного прохождения.</p>
+                        
+                        <p>С точки зрения маркетинга — это хорошая возможность для кросс-промоушена. Выход компьютерной игры подогреет интерес к настольной, и наоборот. Мы создаём целый мир для нашей аудитории.</p>
+                        
+                        <p><strong>Инициативная и вовлечённая команда.</strong><br>
+                        Мы горим своим проектом. Мы готовы активно участвовать на всех этапах: от доработки дизайна и организации тестирований до поддержки маркетинговых активностей. Будем рады стать вашими партнерами!</p>
+                        
+                        <h3>Что мы ищем от партнёра:</h3>
+                        
+                        <p><strong>Экспертизу и поддержку в издании.</strong><br>
+                        Мы хотим работать с профессионалами, которые помогут нам вывести игру на рынок и поддержать нас на этапах производстве продукции и дистрибуции.</p>
+                        
+                        <p><strong>Партнёрство в маркетинге и продвижении.</strong><br>
+                        Мы верим в наш продукт и готовы вкладывать силы, но нам нужна ваша мощь и опыт в том, чтобы громко заявить о себе и донести игру до нашей целевой аудитории.</p>
+                    `;
                     break;
             }
             
             modalTitle.textContent = title;
-            modalText.textContent = text;
+            modalText.innerHTML = text;
             modal.classList.add('active');
         }
 
@@ -653,8 +827,8 @@
                     break;
             }
             
-            modalTitle.textContent = 'Встреча с монстром';
-            modalText.innerHTML = `${monsterText}<br><br>Сила противника – ${strength}`;
+            modalTitle.textContent = 'ВСТРЕЧА С МОНСТРОМ';
+            modalText.innerHTML = `${monsterText}<br><br><strong>Сила противника – ${strength}</strong>`;
             modal.classList.add('active');
             
             // Показываем кнопки сражения
@@ -763,6 +937,9 @@
                     
                     // Обновляем состояние
                     gameState.monster1Defeated = true;
+                    
+                    // Закрываем модальное окно
+                    modal.classList.remove('active');
                 }, 2000);
             }, 500);
         }
@@ -785,6 +962,9 @@
                 
                 // Обновляем состояние
                 gameState.monster2Defeated = true;
+                
+                // Закрываем модальное окно
+                modal.classList.remove('active');
             }, 2000);
         }
 
@@ -816,6 +996,9 @@
                 
                 // Обновляем состояние
                 gameState.monster2Defeated = true;
+                
+                // Закрываем модальное окно
+                modal.classList.remove('active');
             }, 2000);
         }
 
@@ -861,12 +1044,39 @@
             
             // Обновляем состояние
             gameState.monster3Defeated = true;
+            
+            // Закрываем модальное окно
+            modal.classList.remove('active');
         }
 
         // Показать локацию "команда"
         function showTeamLocation() {
-            modalTitle.textContent = 'Команда';
-            modalText.textContent = 'На этой локации применяется эффект: «завершить сюжетную арку «знакомство». Мы – KRAW Studio. Группа инициативных любителей настольных игр (и не только). И да, мы достаточно амбициозны (или безумны), чтобы параллельно работать над компьютерной версией той же игровой вселенной. Мы верим в силу трансмедийности и хотим, чтобы наши игроки могли погрузиться в мир игры с любой стороны. Наша команда: Настольная игра: Анастасия Оглы, Павел Алексеев — гейм-дизайнеры. Александра Юрченко и Олеся Кан — графические дизайнеры. Александра Волкова — нарративный дизайнер. Компьютерная игра: Максим Усачев — автор идеи, разработчик. Никита Старков — саунд-дизайнер. Дарья Горбунова — левел-дизайнер. Рады познакомиться и надеемся, что вам было с нами весело! Предлагаем и дальше веселиться рука об руку, разрабатывая эту настольную игру! Наши контакты: Почта: мяумяу. Наши тг: гав гав';
+            modalTitle.textContent = 'КОМАНДА';
+            modalText.innerHTML = `
+                <p>На этой локации применяется эффект: «завершить сюжетную арку «знакомство»</p>
+                
+                <p>Мы – KRAW Studio. Группа инициативных любителей настольных игр (и не только)</p>
+                
+                <p>И да, мы достаточно амбициозны (или безумны), чтобы параллельно работать над компьютерной версией той же игровой вселенной. Мы верим в силу трансмедийности и хотим, чтобы наши игроки могли погрузиться в мир игры с любой стороны.</p>
+                
+                <h3>Наша команда:</h3>
+                
+                <p><strong>Настольная игра:</strong><br>
+                Анастасия Оглы, Павел Алексеев — гейм-дизайнеры<br>
+                Александра Юрченко и Олеся Кан — графические дизайнеры<br>
+                Александра Волкова — нарративный дизайнер</p>
+                
+                <p><strong>Компьютерная игра</strong><br>
+                Максим Усачев — автор идеи, разработчик.<br>
+                Никита Старков — саунд-дизайнер.<br>
+                Дарья Горбунова — левел-дизайнер.</p>
+                
+                <p>Рады познакомиться и надеемся, что вам было с нами весело! Предлагаем и дальше веселиться рука об руку, разрабатывая эту настольную игру!</p>
+                
+                <p><strong>Наши контакты:</strong><br>
+                Почта: мяумяу<br>
+                Наши тг: гав гав</p>
+            `;
             modal.classList.add('active');
             
             // Обновляем подсказки
@@ -875,19 +1085,8 @@
         }
 
         // Обновить трекер локации
-        function updateLocationTracker(location) {
-            const locationNames = {
-                'start': 'Стартовая локация',
-                'about': 'Об игре',
-                'monster1': 'Встреча с первым монстром',
-                'purpose': 'Для кого и зачем',
-                'monster2': 'Встреча со вторым монстром',
-                'coop': 'Сотрудничество',
-                'monster3': 'Встреча с третьим монстром',
-                'team': 'Команда'
-            };
-            
-            locationTracker.textContent = `Текущая локация: ${locationNames[location]}`;
+        function updateLocationTracker(locationName) {
+            locationTracker.textContent = `Текущая локация: ${locationName}`;
             locationTracker.style.display = 'block';
         }
 
@@ -895,19 +1094,26 @@
         function placeLocationCardsAround(locationType) {
             // Создаем 4 карты локаций вокруг текущей локации
             const positions = [
-                { left: '50%', top: '30%', transform: 'translate(-50%, -50%)' }, // сверху
-                { left: '70%', top: '50%', transform: 'translate(-50%, -50%)' }, // справа
-                { left: '50%', top: '70%', transform: 'translate(-50%, -50%)' }, // снизу
-                { left: '30%', top: '50%', transform: 'translate(-50%, -50%)' }  // слева
+                { row: 1, col: 2 }, // сверху
+                { row: 2, col: 3 }, // справа
+                { row: 3, col: 2 }, // снизу
+                { row: 2, col: 1 }  // слева
             ];
             
+            // Очищаем сетку
+            locationGrid.innerHTML = '';
+            locationGrid.style.display = 'grid';
+            
             positions.forEach((pos, index) => {
+                const gridCell = document.createElement('div');
+                gridCell.className = 'grid-cell';
+                gridCell.dataset.row = pos.row;
+                gridCell.dataset.col = pos.col;
+                locationGrid.appendChild(gridCell);
+                
                 const locationCard = document.createElement('div');
                 locationCard.className = 'card location-card';
-                locationCard.style.backgroundImage = 'url("back.png")';
-                locationCard.style.left = pos.left;
-                locationCard.style.top = pos.top;
-                locationCard.style.transform = pos.transform;
+                locationCard.style.backgroundImage = 'url("assets/back.png")';
                 locationCard.style.opacity = '0';
                 locationCard.dataset.position = index;
                 
@@ -935,7 +1141,7 @@
                 }
                 
                 locationCard.dataset.location = targetLocation;
-                document.querySelector('.game-container').appendChild(locationCard);
+                gridCell.appendChild(locationCard);
                 
                 // Анимация появления
                 setTimeout(() => {
@@ -952,16 +1158,13 @@
             
             // Показываем подсказку
             hintBottom.style.display = 'block';
-            hintBottom.textContent = 'Доступные действия: выбрать направление';
+            hintBottom.textContent = 'Доступные действия: Выбрать направление';
         }
 
         // Открыть карту локации
         function revealLocationCard(card) {
             const locationType = card.dataset.location;
-            card.style.backgroundImage = `url("card-${locationType}.png")`;
-            
-            // Обновляем трекер локации
-            updateLocationTracker(locationType);
+            card.style.backgroundImage = `url("assets/card-${locationType}.png")`;
             
             // Обновляем состояние игры
             gameState.currentLocation = locationType;
@@ -974,7 +1177,7 @@
                 
                 // Показываем подсказку
                 hintBottom.style.display = 'block';
-                hintBottom.textContent = 'Доступные действия: применить эффект локации';
+                hintBottom.textContent = 'Доступные действия: Применить эффект локации';
             } else if (locationType.includes('monster')) {
                 card.addEventListener('click', () => {
                     showMonsterBattle(locationType);
@@ -1018,7 +1221,7 @@
         // Инициализация игры
         function initGame() {
             // Показываем трекер локации
-            updateLocationTracker('start');
+            updateLocationTracker('Стартовая локация');
         }
 
         // Запуск инициализации при загрузке страницы
