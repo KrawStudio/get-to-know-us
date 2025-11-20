@@ -133,7 +133,7 @@
             background-color: rgba(0, 0, 0, 0.8);
             padding: 15px 20px;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 14px; /* Уменьшен с 18px */
             max-width: 300px;
             line-height: 1.5;
             z-index: 10;
@@ -146,7 +146,7 @@
             top: 5px;
             right: 10px;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 16px; /* Уменьшен с 20px */
             color: #fff;
         }
         
@@ -179,7 +179,7 @@
             background-color: rgba(0, 0, 0, 0.8);
             padding: 15px 20px;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 14px; /* Уменьшен с 18px */
             max-width: 300px;
             line-height: 1.5;
             z-index: 10;
@@ -194,7 +194,7 @@
             background-color: rgba(0, 0, 0, 0.8);
             padding: 15px 20px;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 14px; /* Уменьшен с 18px */
             max-width: 300px;
             line-height: 1.5;
             z-index: 10;
@@ -352,7 +352,7 @@
             background-color: rgba(0, 0, 0, 0.8);
             padding: 15px 20px;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 14px; /* Уменьшен с 18px */
             text-align: center;
             margin-top: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -400,6 +400,51 @@
         .side-item-card.left:hover {
             transform: rotate(-90deg) translateX(90%) translateX(-160px) translateY(-30px);
         }
+        
+        /* Финальный экран */
+        .final-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s;
+        }
+        
+        .final-screen.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .final-content {
+            background-color: rgba(30, 20, 10, 0.95);
+            color: #e8d8c0;
+            padding: 50px;
+            border-radius: 15px;
+            max-width: 800px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.9);
+            border: 3px solid #d4af37;
+        }
+        
+        .final-content h2 {
+            font-size: 36px;
+            margin-bottom: 30px;
+            color: #d4af37;
+        }
+        
+        .final-content p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -440,6 +485,15 @@
                     <div class="roll-result" id="roll-result" style="display: none;"></div>
                 </div>
                 <button id="modal-close" style="display: none;">Вернуться к игре</button>
+                <button id="modal-finish" style="display: none;">Завершить путешествие</button>
+            </div>
+        </div>
+        
+        <!-- Финальный экран -->
+        <div class="final-screen" id="final-screen">
+            <div class="final-content">
+                <h2>Спасибо за то, что сыграли с нами!</h2>
+                <p>Ценим ваше время</p>
             </div>
         </div>
     </div>
@@ -483,10 +537,12 @@
         const modalTitle = document.getElementById('modal-title');
         const modalText = document.getElementById('modal-text');
         const modalClose = document.getElementById('modal-close');
+        const modalFinish = document.getElementById('modal-finish');
         const battleContent = document.getElementById('battle-content');
         const battleButtons = document.getElementById('battle-buttons');
         const rollResult = document.getElementById('roll-result');
         const titleContainer = document.querySelector('.title-container');
+        const finalScreen = document.getElementById('final-screen');
 
         // Обработчик клика на колоду
         deck.addEventListener('click', handleDeckClick);
@@ -506,6 +562,13 @@
             modalClose.style.display = 'none';
             // Делаем карты направлений неактивными
             setDirectionsActive(false);
+        });
+
+        // Обработчик завершения путешествия
+        modalFinish.addEventListener('click', () => {
+            modal.classList.remove('active');
+            // Показываем финальный экран
+            finalScreen.classList.add('active');
         });
 
         // Функция закрытия подсказки
@@ -876,6 +939,8 @@
                     
                     // Скрываем подсказку снизу при выборе направления
                     hideHintBottom();
+                    // Делаем карты направлений неактивными после выбора
+                    setDirectionsActive(false);
                     handleDirectionClick(dir);
                 });
             });
@@ -1278,11 +1343,18 @@
                 buttonRow.appendChild(swordButton);
                 battleButtons.appendChild(buttonRow);
             } else if (monsterType === 'monster3') {
+                // Создаем контейнер для кнопок в строку (как для второго монстра)
+                const buttonRow = document.createElement('div');
+                buttonRow.className = 'battle-button-row';
+                
                 if (gameState.items.includes('sword')) {
                     const bareHandsButton = document.createElement('button');
                     bareHandsButton.className = 'battle-button';
                     bareHandsButton.textContent = 'Биться голыми руками';
                     bareHandsButton.addEventListener('click', () => {
+                        // Делаем обе кнопки неактивными
+                        bareHandsButton.disabled = true;
+                        swordButton.disabled = true;
                         handleThirdMonsterAttack();
                     });
                     
@@ -1290,20 +1362,25 @@
                     swordButton.className = 'battle-button';
                     swordButton.textContent = 'Использовать Меч-кладенец';
                     swordButton.addEventListener('click', () => {
+                        // Делаем обе кнопки неактивными
+                        bareHandsButton.disabled = true;
+                        swordButton.disabled = true;
                         handleThirdMonsterAttack();
                     });
                     
-                    battleButtons.appendChild(bareHandsButton);
-                    battleButtons.appendChild(swordButton);
+                    buttonRow.appendChild(bareHandsButton);
+                    buttonRow.appendChild(swordButton);
                 } else {
                     const attackButton = document.createElement('button');
                     attackButton.className = 'battle-button';
                     attackButton.textContent = 'Бросить кубики, чтобы сразиться';
                     attackButton.addEventListener('click', () => {
+                        attackButton.disabled = true;
                         handleThirdMonsterAttack();
                     });
-                    battleButtons.appendChild(attackButton);
+                    buttonRow.appendChild(attackButton);
                 }
+                battleButtons.appendChild(buttonRow);
             }
             
             modalClose.style.display = 'none';
@@ -1484,8 +1561,7 @@
 
         // Использование амулета для побега
         function useAmuletToEscape() {
-            // Убираем результат броска
-            rollResult.style.display = 'none';
+            // НЕ скрываем результат броска (убираем rollResult.style.display = 'none')
             
             // Убираем кнопку-карточку амулета
             const amuletButton = battleButtons.querySelector('.card-button');
@@ -1503,8 +1579,8 @@
                 }, 500);
             }
             
-            // Показываем кнопку "Вернуться к игре"
-            modalClose.style.display = 'block';
+            // Показываем кнопку "Завершить путешествие" вместо "Вернуться к игре"
+            modalFinish.style.display = 'block';
             
             // Обновляем состояние
             gameState.monster3Defeated = true;
