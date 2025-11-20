@@ -96,6 +96,13 @@
             height: 220px;
         }
         
+        /* Карты направлений - неактивные */
+        .direction-card.inactive {
+            cursor: default;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
         /* Колода в центре или левом нижнем углу */
         .deck {
             position: absolute;
@@ -286,6 +293,12 @@
             margin-top: 20px;
         }
         
+        .battle-button-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
         .battle-button {
             background-color: rgba(139, 69, 19, 0.9);
             color: #e8d8c0;
@@ -376,6 +389,17 @@
         .side-item-card:hover {
             transform: rotate(-90deg) translateX(90%) translateY(-30px); /* Выдвигается только вверх */
         }
+        
+        /* Стиль для карточки амулета слева от меча */
+        .side-item-card.left {
+            transform: rotate(-90deg) translateX(90%) translateX(-160px);
+            right: 0;
+            top: 50%;
+        }
+        
+        .side-item-card.left:hover {
+            transform: rotate(-90deg) translateX(90%) translateX(-160px) translateY(-30px);
+        }
     </style>
 </head>
 <body>
@@ -399,7 +423,7 @@
         </div>
         <div class="hint hint-right-deck" id="hint-right-deck" style="display: none;">
             <span class="hint-close" onclick="closeHint('hint-right-deck')">×</span>
-            Доступные действия: <<< <br>Выложить новые карты локаций
+            Доступные действия: <br>&lt;&lt;&lt; Выложить новые карты локаций
         </div>
         <div class="hint hint-bottom" id="hint-bottom" style="display: none;">
             <span class="hint-close" onclick="closeHint('hint-bottom')">×</span>
@@ -444,7 +468,8 @@
             },
             // Порядок открытия локаций
             locationOrder: ['start', 'about', 'monster1', 'purpose', 'monster2', 'coop', 'monster3', 'team'],
-            openedLocations: [] // Какие локации уже открыты
+            openedLocations: [], // Какие локации уже открыты
+            directionsActive: false // Активны ли карты направлений
         };
 
         // DOM элементы
@@ -479,6 +504,8 @@
             gameState.battleState.swordReceived = false;
             // Скрываем кнопку "Вернуться к игре"
             modalClose.style.display = 'none';
+            // Делаем карты направлений неактивными
+            setDirectionsActive(false);
         });
 
         // Функция закрытия подсказки
@@ -504,6 +531,19 @@
         // Скрыть подсказку снизу
         function hideHintBottom() {
             hintBottom.style.display = 'none';
+        }
+
+        // Установить активность карт направлений
+        function setDirectionsActive(active) {
+            gameState.directionsActive = active;
+            const directionCards = document.querySelectorAll('.direction-card');
+            directionCards.forEach(card => {
+                if (active) {
+                    card.classList.remove('inactive');
+                } else {
+                    card.classList.add('inactive');
+                }
+            });
         }
 
         // Функция обработки клика на колоду
@@ -632,6 +672,15 @@
             if (itemType === 'doll' || itemType === 'sword') {
                 // Для куколки и меча особое позиционирование
                 itemCard.classList.add('side-item-card');
+            } else if (itemType === 'amulet') {
+                // Для амулета определяем позицию в зависимости от наличия меча
+                if (gameState.items.includes('sword')) {
+                    // Если меч есть - амулет слева от меча
+                    itemCard.classList.add('side-item-card', 'left');
+                } else {
+                    // Если меча нет - амулет на месте меча
+                    itemCard.classList.add('side-item-card');
+                }
             } else {
                 itemCard.style.left = '60%';
                 itemCard.style.top = '50%';
@@ -649,13 +698,21 @@
                 gameState.items.push(itemType);
             }, 300);
 
-            // Для куколки и меча добавляем обработчик наведения
-            if (itemType === 'doll' || itemType === 'sword') {
+            // Для куколки, меча и амулета добавляем обработчик наведения
+            if (itemType === 'doll' || itemType === 'sword' || itemType === 'amulet') {
                 itemCard.addEventListener('mouseenter', () => {
-                    itemCard.style.transform = 'rotate(-90deg) translateX(90%) translateY(-30px)';
+                    if (itemType === 'amulet' && gameState.items.includes('sword')) {
+                        itemCard.style.transform = 'rotate(-90deg) translateX(90%) translateX(-160px) translateY(-30px)';
+                    } else {
+                        itemCard.style.transform = 'rotate(-90deg) translateX(90%) translateY(-30px)';
+                    }
                 });
                 itemCard.addEventListener('mouseleave', () => {
-                    itemCard.style.transform = 'rotate(-90deg) translateX(90%)';
+                    if (itemType === 'amulet' && gameState.items.includes('sword')) {
+                        itemCard.style.transform = 'rotate(-90deg) translateX(90%) translateX(-160px)';
+                    } else {
+                        itemCard.style.transform = 'rotate(-90deg) translateX(90%)';
+                    }
                 });
             }
         }
@@ -721,6 +778,9 @@
             
             // Показываем карты направлений
             showDirectionCards();
+            
+            // Активируем карты направлений
+            setDirectionsActive(true);
             
             // Показываем подсказку снизу
             showHintBottom();
@@ -802,10 +862,18 @@
                 directionCard.style.left = positions[index].left;
                 directionCard.style.bottom = positions[index].bottom;
                 directionCard.dataset.direction = dir;
+                
+                // Сначала карты направлений неактивны
+                if (!gameState.directionsActive) {
+                    directionCard.classList.add('inactive');
+                }
+                
                 document.querySelector('.game-container').appendChild(directionCard);
                 
                 // Обработчик клика
                 directionCard.addEventListener('click', () => {
+                    if (!gameState.directionsActive) return;
+                    
                     // Скрываем подсказку снизу при выборе направления
                     hideHintBottom();
                     handleDirectionClick(dir);
@@ -881,6 +949,13 @@
                 // Возвращаем поворот для куколки и меча
                 if (card.id === 'item-doll' || card.id === 'item-sword') {
                     card.style.transform = 'rotate(-90deg) translateX(90%)';
+                } else if (card.id === 'item-amulet') {
+                    // Для амулета возвращаем правильную позицию
+                    if (gameState.items.includes('sword')) {
+                        card.style.transform = 'rotate(-90deg) translateX(90%) translateX(-160px)';
+                    } else {
+                        card.style.transform = 'rotate(-90deg) translateX(90%)';
+                    }
                 } else {
                     card.style.left = '60%';
                     card.style.top = '50%';
@@ -1053,16 +1128,25 @@
                         
                         <h3>ИГРОВОЙ ЦИКЛ</h3>
                         
-                        <p><strong>Фаза «Погружение в сон»</strong><br>
+                        <p><strong>Фаза 1. «Погружение в сон»</strong><br>
                         > Герой выкладывает необходимое количество карт локаций так, чтобы все стороны одной из уже выложенных карт были «закрыты» другими картами</p>
                         
-                        <p><strong>Фаза «Пора бежать»</strong><br>
+                        <p><strong>Фаза 2. «Пора бежать»</strong><br>
                         > Все игроки набирают по четыре карты направлений</p>
                         
-                        <p><strong>Фаза «Муки выбора»</strong><br>
+                        <p><strong>Фаза 3. «Муки выбора»</strong><br>
                         > Игроки принимают решение куда идти и выкладывают соответствующую карту направления взакрытую.</p>
                         
-                        <p>Дальше >>></p>
+                        <p><strong>Фаза 4. «Столкновение»</strong><br>
+                        > Карты направлений вскрываются. Проверяется произошло ли столкновение.<br>
+                        >> Если не произошло – игроки возвращаются к фазе «погружение в сон»<br>
+                        >> Если произошло – игроки, оказавшиеся на одной локации начинают сражение</p>
+                        
+                        <p><strong>Фаза 5. «Сражение»</strong><br>
+                        > Сражающиеся принимают решение о необходимости использовать предметы/навыки<br>
+                        > Возвращение к 1 фазе.</p>
+                        
+                        <p>Конечно, нюансов гораздо больше, но пока что, кажется, информации достаточно :)</p>
                     `;
                     break;
                 case 'purpose':
@@ -1166,10 +1250,17 @@
                 });
                 battleButtons.appendChild(attackButton);
             } else if (monsterType === 'monster2') {
+                // Создаем контейнер для кнопок в строку
+                const buttonRow = document.createElement('div');
+                buttonRow.className = 'battle-button-row';
+                
                 const bareHandsButton = document.createElement('button');
                 bareHandsButton.className = 'battle-button';
                 bareHandsButton.textContent = 'Биться голыми руками';
                 bareHandsButton.addEventListener('click', () => {
+                    // Делаем обе кнопки неактивными
+                    bareHandsButton.disabled = true;
+                    swordButton.disabled = true;
                     handleSecondMonsterBareHands();
                 });
                 
@@ -1177,11 +1268,15 @@
                 swordButton.className = 'battle-button';
                 swordButton.textContent = 'Использовать Меч-кладенец';
                 swordButton.addEventListener('click', () => {
+                    // Делаем обе кнопки неактивными
+                    bareHandsButton.disabled = true;
+                    swordButton.disabled = true;
                     handleSecondMonsterSword();
                 });
                 
-                battleButtons.appendChild(bareHandsButton);
-                battleButtons.appendChild(swordButton);
+                buttonRow.appendChild(bareHandsButton);
+                buttonRow.appendChild(swordButton);
+                battleButtons.appendChild(buttonRow);
             } else if (monsterType === 'monster3') {
                 if (gameState.items.includes('sword')) {
                     const bareHandsButton = document.createElement('button');
@@ -1311,6 +1406,14 @@
             rollResult.style.display = 'block';
             rollResult.textContent = 'результат бросков: 6 и 6.\nВау! Да вы опытный боец! Поспешим в путь! И вновь применяем эффект карты локации – за победу над монстром получите предмет. Хотя, наверное, такому силачу уже никакие предметы не нужны';
             
+            // Добавляем некликабельную карточку амулета
+            const amuletButton = document.createElement('button');
+            amuletButton.className = 'card-button';
+            amuletButton.style.backgroundImage = 'url("assets/item-amulet.png")';
+            amuletButton.disabled = true;
+            
+            battleButtons.appendChild(amuletButton);
+            
             // Показываем кнопку "Вернуться к игре"
             modalClose.style.display = 'block';
             
@@ -1337,6 +1440,14 @@
             
             rollResult.style.display = 'block';
             rollResult.textContent = 'результат бросков: 5 и 4.\nВсегда важно грамотно рассчитать силы. Хорошо, что у вас в ножнах оказалось такое оружие! И вновь применяем эффект карты локации – за победу над монстром получите предмет.';
+            
+            // Добавляем некликабельную карточку амулета
+            const amuletButton = document.createElement('button');
+            amuletButton.className = 'card-button';
+            amuletButton.style.backgroundImage = 'url("assets/item-amulet.png")';
+            amuletButton.disabled = true;
+            
+            battleButtons.appendChild(amuletButton);
             
             // Показываем кнопку "Вернуться к игре"
             modalClose.style.display = 'block';
