@@ -76,6 +76,7 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            z-index: 2;
         }
         
         .location-card {
@@ -592,7 +593,7 @@
             hintUnderCard.style.transform = 'translateX(-50%)';
             hintUnderCard.innerHTML = 'Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
             hintUnderCard.id = 'hint-under-start';
-            gameBoard.appendChild(hintUnderCard);
+            document.querySelector('.game-container').appendChild(hintUnderCard);
             
             // Анимация появления
             setTimeout(() => {
@@ -630,7 +631,7 @@
             }
             
             itemCard.style.opacity = '0';
-            gameBoard.appendChild(itemCard);
+            document.querySelector('.game-container').appendChild(itemCard);
             
             // Анимация появления
             setTimeout(() => {
@@ -771,54 +772,6 @@
                 loc.element.style.top = `${top}px`;
                 loc.element.style.transform = 'none';
             });
-            
-            // Проверяем и корректируем позиции карт, чтобы они не пересекались с другими элементами
-            checkCardPositions();
-        }
-
-        // Проверить и скорректировать позиции карт
-        function checkCardPositions() {
-            const locationCards = document.querySelectorAll('.location-card');
-            const directionCards = document.querySelectorAll('.direction-card');
-            const itemCards = document.querySelectorAll('.item-card');
-            
-            // Проверяем пересечения карт локаций с картами направлений
-            locationCards.forEach(locCard => {
-                const locRect = locCard.getBoundingClientRect();
-                
-                directionCards.forEach(dirCard => {
-                    const dirRect = dirCard.getBoundingClientRect();
-                    
-                    // Если есть пересечение, немного сдвигаем карту направлений
-                    if (isOverlapping(locRect, dirRect)) {
-                        dirCard.style.bottom = '15%';
-                    }
-                });
-                
-                // Проверяем пересечения с картами предметов
-                itemCards.forEach(itemCard => {
-                    const itemRect = itemCard.getBoundingClientRect();
-                    
-                    if (isOverlapping(locRect, itemRect)) {
-                        // Сдвигаем карту предмета вправо
-                        if (itemCard.id === 'item-doll') {
-                            itemCard.style.transform = 'rotate(-90deg) translateX(95%)';
-                        } else {
-                            itemCard.style.left = '65%';
-                        }
-                    }
-                });
-            });
-        }
-
-        // Проверить пересечение двух прямоугольников
-        function isOverlapping(rect1, rect2) {
-            return !(
-                rect1.right < rect2.left || 
-                rect1.left > rect2.right || 
-                rect1.bottom < rect2.top || 
-                rect1.top > rect2.bottom
-            );
         }
 
         // Показать карты направлений
