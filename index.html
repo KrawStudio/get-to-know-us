@@ -445,15 +445,6 @@
             line-height: 1.6;
             margin-bottom: 20px;
         }
-        
-        a {
-            color: #d4af37;
-            text-decoration: none;
-        }
-        
-        a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
@@ -502,11 +493,7 @@
         <div class="final-screen" id="final-screen">
             <div class="final-content">
                 <h2>Спасибо за то, что сыграли с нами!</h2>
-                <p>Ценим ваши время и комфорт, поэтому собрали всю информацию в <a href="https://docs.google.com/document/d/1H75S1BBUs6KEq8VO2hk8cX6vKmiYZozbT5AOnwoe9no/edit?usp=sharing" target="_blank">этом документе</a></p>
-                <p>Вы можете связаться с нами по:<br>
-                Почте: kraw.gamedev.studio@gmail.com<br>
-                ТГ: @ostegy или @saashaaa24</p>
-                <p>— Ваша Kraw Studio. Не прощаемся!</p>
+                <p>Ценим ваше время</p>
             </div>
         </div>
     </div>
@@ -536,8 +523,7 @@
             // Порядок открытия локаций
             locationOrder: ['start', 'about', 'monster1', 'purpose', 'monster2', 'coop', 'monster3', 'team'],
             openedLocations: [], // Какие локации уже открыты
-            directionsActive: false, // Активны ли карты направлений
-            visitedLocations: [] // Какие локации уже посещались
+            directionsActive: false // Активны ли карты направлений
         };
 
         // DOM элементы
@@ -565,10 +551,7 @@
         modalClose.addEventListener('click', () => {
             modal.classList.remove('active');
             // После закрытия модального окна показываем подсказку справа от колоды
-            // только если мы не на уже посещенной локации
-            if (!isCurrentLocationVisited()) {
-                showHintRightDeck();
-            }
+            showHintRightDeck();
             // Возвращаем карты предметов в исходное состояние
             resetItemCardsPosition();
             // Сбрасываем состояние боя
@@ -591,11 +574,6 @@
         // Функция закрытия подсказки
         function closeHint(hintId) {
             document.getElementById(hintId).style.display = 'none';
-        }
-
-        // Проверка, была ли текущая локация уже посещена
-        function isCurrentLocationVisited() {
-            return gameState.visitedLocations.includes(gameState.currentLocation);
         }
 
         // Показать подсказку справа от колоды (в левом нижнем углу)
@@ -717,7 +695,6 @@
             
             // Добавляем стартовую локацию в список открытых
             gameState.openedLocations.push('start');
-            gameState.visitedLocations.push('start');
             
             // Создаем подсказку под картой
             const hintUnderCard = document.createElement('div');
@@ -725,7 +702,7 @@
             hintUnderCard.style.left = '50%';
             hintUnderCard.style.top = 'calc(50% + 130px)'; // Под картой
             hintUnderCard.style.transform = 'translateX(-50%)';
-            hintUnderCard.innerHTML = '<span class="hint-close" onclick="this.parentElement.remove()">×</span>Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
+            hintUnderCard.innerHTML = 'Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
             hintUnderCard.id = 'hint-under-start';
             document.querySelector('.game-container').appendChild(hintUnderCard);
             
@@ -868,11 +845,9 @@
             // Активируем карты направлений
             setDirectionsActive(true);
             
-            // Показываем подсказку снизу только если локация не посещалась
-            if (!isCurrentLocationVisited()) {
-                showHintBottom();
-                hintBottomText.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-bottom\')">×</span>Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
-            }
+            // Показываем подсказку снизу
+            showHintBottom();
+            hintBottomText.innerHTML = 'Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
             
             gameState.phase = 'locationCardsPlaced';
         }
@@ -976,13 +951,10 @@
             // Удаляем старую подсказку, если есть
             hideActiveCardHint();
             
-            // Не показываем подсказку для уже посещенных локаций
-            if (isCurrentLocationVisited()) return;
-            
             const cardRect = cardElement.getBoundingClientRect();
             const hint = document.createElement('div');
             hint.className = 'hint-active-card';
-            hint.innerHTML = '<span class="hint-close" onclick="this.parentElement.remove()">×</span>Доступные действия: Применить эффект локации';
+            hint.innerHTML = 'Доступные действия: Применить эффект локации';
             hint.id = 'hint-active-card';
             
             // Определяем позицию подсказки относительно карты
@@ -1093,24 +1065,12 @@
                     const newActiveCard = document.querySelector(`.location-card[data-x="${newX}"][data-y="${newY}"]`);
                     if (newActiveCard) {
                         newActiveCard.classList.add('active');
-                        // Создаем подсказку для активной карты только если локация не посещалась
-                        if (!gameState.visitedLocations.includes(gameState.locationGrid[newPositionKey])) {
-                            createActiveCardHint(newActiveCard);
-                        }
+                        // Создаем подсказку для активной карты
+                        createActiveCardHint(newActiveCard);
                     }
                     
                     gameState.currentPosition = { x: newX, y: newY };
                     gameState.currentLocation = gameState.locationGrid[newPositionKey];
-                    
-                    // Если локация уже посещалась, оставляем карты направлений активными
-                    if (isCurrentLocationVisited()) {
-                        setDirectionsActive(true);
-                        showHintBottom();
-                        hintBottomText.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-bottom\')">×</span>Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
-                    } else {
-                        // Добавляем локацию в список посещенных
-                        gameState.visitedLocations.push(gameState.currentLocation);
-                    }
                     
                     // Обновляем фазу игры
                     updateGamePhase();
@@ -1153,10 +1113,8 @@
                 
                 // Добавляем подсветку на новую активную карту
                 locationCard.classList.add('active');
-                // Создаем подсказку для активной карты только если локация не посещалась
-                if (!gameState.visitedLocations.includes(locationType)) {
-                    createActiveCardHint(locationCard);
-                }
+                // Создаем подсказку для активной карты
+                createActiveCardHint(locationCard);
                 
                 // Обновляем состояние игры
                 gameState.locationGrid[positionKey] = locationType;
@@ -1165,8 +1123,6 @@
                 
                 // Добавляем локацию в список открытых
                 gameState.openedLocations.push(locationType);
-                // Добавляем локацию в список посещенных
-                gameState.visitedLocations.push(locationType);
                 
                 // Обновляем тип в массиве всех локаций
                 const locationInArray = gameState.allLocations.find(loc => loc.x === x && loc.y === y);
@@ -1260,6 +1216,32 @@
                     break;
                 case 'purpose':
                     title = 'ДЛЯ КОГО И ЗАЧЕМ';
+                    text = `
+                        <p>На этой локации применяется эффект: «приоткрыть завесу тайны».</p>
+                        
+                        <p>Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душей компании. Мы создаём игру, которая станет его новым козырем в коллекции.</p>
+                        
+                        <p>Наша игра идеально подойдёт для трёх сегментов игроков:</p>
+                        
+                        <p><strong>Стратеги и тактики.</strong> Тем, кто любит выстраивать стратегии, комбинировать карты и наслаждаться чувством контроля над сложной системой.</p>
+                        
+                        <p><strong>Фанаты мифологии.</strong> Те, кто изучает культуру стран, любит погружаться в атмосферные сеттинги. Это люди, которые увлекаются русским и/или японским фольклором, а еще оценят их тонкое переплетение.</p>
+                        
+                        <p><strong>Визуалы и эстеты.</strong> Те, для кого важен визуальный стиль. Мы создаем визуал, где старославянские узоры встречаются с лаконичной японской графикой.</p>
+                        
+                        <p><strong>Кому понравится? (Смежный игровой опыт):</strong><br>
+                        Если вы играли в:<br>
+                        «Ярость дракулы»,<br>
+                        «Шепот за стеной»,<br>
+                        «Нечто»,<br>
+                        «Тираны подземья»,<br>
+                        «Иниш»,<br>
+                        «Кто накормит кракена?».<br>
+                        То вероятнее всего, вам порекомендуют «Сон журавля».</p>
+                    `;
+                    break;
+                case 'coop':
+                    title = 'СОТРУДНИЧЕСТВО';
                     text = `
                         <p>На этой локации применяется эффект: «стать друзьями».</p>
                         
