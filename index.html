@@ -445,6 +445,37 @@
             line-height: 1.6;
             margin-bottom: 20px;
         }
+        
+        /* Кнопка управления подсказками */
+        .hints-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(139, 69, 19, 0.9);
+            color: #e8d8c0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            z-index: 20;
+            transition: background-color 0.3s;
+            display: none;
+        }
+        
+        .hints-toggle:hover {
+            background-color: rgba(160, 82, 45, 0.9);
+        }
+        
+        a {
+            color: #d4af37;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -460,6 +491,9 @@
         
         <!-- Колода -->
         <div class="deck" id="deck"></div>
+        
+        <!-- Кнопка управления подсказками -->
+        <button class="hints-toggle" id="hints-toggle">Отключить подсказки</button>
         
         <!-- Подсказки -->
         <div class="hint hint-right-center" id="hint-right-center">
@@ -493,7 +527,11 @@
         <div class="final-screen" id="final-screen">
             <div class="final-content">
                 <h2>Спасибо за то, что сыграли с нами!</h2>
-                <p>Ценим ваше время</p>
+                <p>Ценим ваши время и комфорт, поэтому собрали всю информацию в <a href="https://docs.google.com/document/d/1H75S1BBUs6KEq8VO2hk8cX6vKmiYZozbT5AOnwoe9no/edit?usp=sharing" target="_blank">этом документе</a></p>
+                <p>Вы можете связаться с нами по:<br>
+                Почте: kraw.gamedev.studio@gmail.com<br>
+                ТГ: @ostegy или @saashaaa24</p>
+                <p>— Ваша Kraw Studio. Не прощаемся!</p>
             </div>
         </div>
     </div>
@@ -523,7 +561,9 @@
             // Порядок открытия локаций
             locationOrder: ['start', 'about', 'monster1', 'purpose', 'monster2', 'coop', 'monster3', 'team'],
             openedLocations: [], // Какие локации уже открыты
-            directionsActive: false // Активны ли карты направлений
+            directionsActive: false, // Активны ли карты направлений
+            hintsEnabled: true, // Включены ли подсказки
+            visitedLocations: [] // Какие локации уже посещались
         };
 
         // DOM элементы
@@ -543,6 +583,7 @@
         const rollResult = document.getElementById('roll-result');
         const titleContainer = document.querySelector('.title-container');
         const finalScreen = document.getElementById('final-screen');
+        const hintsToggle = document.getElementById('hints-toggle');
 
         // Обработчик клика на колоду
         deck.addEventListener('click', handleDeckClick);
@@ -551,7 +592,10 @@
         modalClose.addEventListener('click', () => {
             modal.classList.remove('active');
             // После закрытия модального окна показываем подсказку справа от колоды
-            showHintRightDeck();
+            // только если мы не на уже посещенной локации
+            if (!isCurrentLocationVisited()) {
+                showHintRightDeck();
+            }
             // Возвращаем карты предметов в исходное состояние
             resetItemCardsPosition();
             // Сбрасываем состояние боя
@@ -571,14 +615,35 @@
             finalScreen.classList.add('active');
         });
 
+        // Обработчик переключения подсказок
+        hintsToggle.addEventListener('click', () => {
+            gameState.hintsEnabled = !gameState.hintsEnabled;
+            if (gameState.hintsEnabled) {
+                hintsToggle.textContent = 'Отключить подсказки';
+                // Показываем подсказки в зависимости от текущего состояния
+                updateHintsVisibility();
+            } else {
+                hintsToggle.textContent = 'Включить подсказки';
+                // Скрываем все подсказки
+                hideAllHints();
+            }
+        });
+
         // Функция закрытия подсказки
         function closeHint(hintId) {
             document.getElementById(hintId).style.display = 'none';
         }
 
+        // Проверка, была ли текущая локация уже посещена
+        function isCurrentLocationVisited() {
+            return gameState.visitedLocations.includes(gameState.currentLocation);
+        }
+
         // Показать подсказку справа от колоды (в левом нижнем углу)
         function showHintRightDeck() {
-            hintRightDeck.style.display = 'block';
+            if (gameState.hintsEnabled) {
+                hintRightDeck.style.display = 'block';
+            }
         }
 
         // Скрыть подсказку справа от колоды
@@ -588,12 +653,49 @@
 
         // Показать подсказку снизу
         function showHintBottom() {
-            hintBottom.style.display = 'block';
+            if (gameState.hintsEnabled) {
+                hintBottom.style.display = 'block';
+            }
         }
 
         // Скрыть подсказку снизу
         function hideHintBottom() {
             hintBottom.style.display = 'none';
+        }
+
+        // Скрыть все подсказки
+        function hideAllHints() {
+            hintRightCenter.style.display = 'none';
+            hintRightDeck.style.display = 'none';
+            hintBottom.style.display = 'none';
+            hideActiveCardHint();
+        }
+
+        // Обновить видимость подсказок в зависимости от состояния
+        function updateHintsVisibility() {
+            // Сначала скрываем все
+            hideAllHints();
+            
+            // Показываем нужные подсказки в зависимости от фазы игры
+            if (gameState.phase === 'start') {
+                hintRightCenter.style.display = 'block';
+            } else if (gameState.phase === 'locationCardsPlaced' && !isCurrentLocationVisited()) {
+                showHintBottom();
+            } else if ((gameState.phase === 'afterStart' || 
+                       gameState.phase === 'afterAbout' || 
+                       gameState.phase === 'afterMonster1' ||
+                       gameState.phase === 'afterPurpose' ||
+                       gameState.phase === 'afterMonster2' ||
+                       gameState.phase === 'afterCoop' ||
+                       gameState.phase === 'afterMonster3') && !isCurrentLocationVisited()) {
+                showHintRightDeck();
+            }
+            
+            // Если есть активная карта и локация не посещалась, показываем подсказку
+            const activeCard = document.querySelector('.location-card.active');
+            if (activeCard && !isCurrentLocationVisited() && gameState.hintsEnabled) {
+                createActiveCardHint(activeCard);
+            }
         }
 
         // Установить активность карт направлений
@@ -695,6 +797,7 @@
             
             // Добавляем стартовую локацию в список открытых
             gameState.openedLocations.push('start');
+            gameState.visitedLocations.push('start');
             
             // Создаем подсказку под картой
             const hintUnderCard = document.createElement('div');
@@ -702,7 +805,7 @@
             hintUnderCard.style.left = '50%';
             hintUnderCard.style.top = 'calc(50% + 130px)'; // Под картой
             hintUnderCard.style.transform = 'translateX(-50%)';
-            hintUnderCard.innerHTML = 'Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
+            hintUnderCard.innerHTML = '<span class="hint-close" onclick="this.parentElement.remove()">×</span>Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
             hintUnderCard.id = 'hint-under-start';
             document.querySelector('.game-container').appendChild(hintUnderCard);
             
@@ -845,9 +948,11 @@
             // Активируем карты направлений
             setDirectionsActive(true);
             
-            // Показываем подсказку снизу
-            showHintBottom();
-            hintBottomText.innerHTML = 'Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
+            // Показываем подсказку снизу только если локация не посещалась
+            if (!isCurrentLocationVisited()) {
+                showHintBottom();
+                hintBottomText.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-bottom\')">×</span>Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
+            }
             
             gameState.phase = 'locationCardsPlaced';
         }
@@ -951,10 +1056,13 @@
             // Удаляем старую подсказку, если есть
             hideActiveCardHint();
             
+            // Не показываем подсказку для уже посещенных локаций
+            if (isCurrentLocationVisited() || !gameState.hintsEnabled) return;
+            
             const cardRect = cardElement.getBoundingClientRect();
             const hint = document.createElement('div');
             hint.className = 'hint-active-card';
-            hint.innerHTML = 'Доступные действия: Применить эффект локации';
+            hint.innerHTML = '<span class="hint-close" onclick="this.parentElement.remove()">×</span>Доступные действия: Применить эффект локации';
             hint.id = 'hint-active-card';
             
             // Определяем позицию подсказки относительно карты
@@ -1065,12 +1173,24 @@
                     const newActiveCard = document.querySelector(`.location-card[data-x="${newX}"][data-y="${newY}"]`);
                     if (newActiveCard) {
                         newActiveCard.classList.add('active');
-                        // Создаем подсказку для активной карты
-                        createActiveCardHint(newActiveCard);
+                        // Создаем подсказку для активной карты только если локация не посещалась
+                        if (!gameState.visitedLocations.includes(gameState.locationGrid[newPositionKey]) && gameState.hintsEnabled) {
+                            createActiveCardHint(newActiveCard);
+                        }
                     }
                     
                     gameState.currentPosition = { x: newX, y: newY };
                     gameState.currentLocation = gameState.locationGrid[newPositionKey];
+                    
+                    // Если локация уже посещалась, оставляем карты направлений активными
+                    if (isCurrentLocationVisited()) {
+                        setDirectionsActive(true);
+                        showHintBottom();
+                        hintBottomText.innerHTML = '<span class="hint-close" onclick="closeHint(\'hint-bottom\')">×</span>Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
+                    } else {
+                        // Добавляем локацию в список посещенных
+                        gameState.visitedLocations.push(gameState.currentLocation);
+                    }
                     
                     // Обновляем фазу игры
                     updateGamePhase();
@@ -1113,8 +1233,10 @@
                 
                 // Добавляем подсветку на новую активную карту
                 locationCard.classList.add('active');
-                // Создаем подсказку для активной карты
-                createActiveCardHint(locationCard);
+                // Создаем подсказку для активной карты только если локация не посещалась
+                if (!gameState.visitedLocations.includes(locationType) && gameState.hintsEnabled) {
+                    createActiveCardHint(locationCard);
+                }
                 
                 // Обновляем состояние игры
                 gameState.locationGrid[positionKey] = locationType;
@@ -1123,6 +1245,8 @@
                 
                 // Добавляем локацию в список открытых
                 gameState.openedLocations.push(locationType);
+                // Добавляем локацию в список посещенных
+                gameState.visitedLocations.push(locationType);
                 
                 // Обновляем тип в массиве всех локаций
                 const locationInArray = gameState.allLocations.find(loc => loc.x === x && loc.y === y);
@@ -1139,6 +1263,11 @@
                     locationCard.addEventListener('click', () => {
                         showMonsterBattle(locationType);
                     });
+                }
+                
+                // Показываем кнопку управления подсказками после открытия локации "about"
+                if (locationType === 'about') {
+                    hintsToggle.style.display = 'block';
                 }
                 
                 // Обновляем фазу игры
@@ -1182,8 +1311,6 @@
                 case 'about':
                     title = 'ОБ ИГРЕ';
                     text = `
-                        <p>На этой локации применяется эффект: «получение сакральных знаний»</p>
-                        
                         <h3>ЛОР</h3>
                         <p>Сеттинг – временной период после русско-японской войны<br>
                         Бэкграунд игрового цикла – солдат, вернувшийся с войны во снах видит кошмары, где сражается с японскими мифическими существами.</p>
@@ -1191,25 +1318,26 @@
                         <p>Таким образом игра представляет собой борьбу с внутренними монстрами (ПТСР) и, в зависимости от исхода партии, исцеление или безумие героя<br>
                         Формат игры – один против всех. Герой против трех монстров</p>
                         
+                        <p>На этой локации применяется эффект: «получение сакральных знаний»</p>
+                        
                         <h3>ИГРОВОЙ ЦИКЛ</h3>
                         
                         <p><strong>Фаза 1. «Погружение в сон»</strong><br>
-                        > Герой выкладывает необходимое количество карт локаций так, чтобы все стороны одной из уже выложенных карт были «закрыты» другими картами.</p>
+                        > Герой выкладывает необходимое количество карт локаций так, чтобы все стороны одной из уже выложенных карт были «закрыты» другими картами</p>
                         
                         <p><strong>Фаза 2. «Пора бежать»</strong><br>
-                        > Все игроки набирают по четыре карты направлений.</p>
+                        > Все игроки набирают по четыре карты направлений</p>
                         
                         <p><strong>Фаза 3. «Муки выбора»</strong><br>
                         > Игроки принимают решение куда идти и выкладывают соответствующую карту направления взакрытую.</p>
                         
                         <p><strong>Фаза 4. «Столкновение»</strong><br>
                         > Карты направлений вскрываются. Проверяется произошло ли столкновение.<br>
-                        >> Если не произошло – игроки возвращаются к фазе «погружение в сон».<br>
-                        >> Если произошло – игроки, оказавшиеся на одной локации начинают сражение.</p>
+                        >> Если не произошло – игроки возвращаются к фазе «погружение в сон»<br>
+                        >> Если произошло – игроки, оказавшиеся на одной локации начинают сражение</p>
                         
                         <p><strong>Фаза 5. «Сражение»</strong><br>
                         > Сражающиеся принимают решение о необходимости использовать предметы/навыки<br>
-                        > Сражающиеся бросают кубы, чтобы решить исход боя, выигравшая сторона получает бонусы локации.<br>
                         > Возвращение к 1 фазе.</p>
                         
                         <p>Конечно, нюансов гораздо больше, но пока что, кажется, информации достаточно :)</p>
@@ -1265,7 +1393,7 @@
                         Мы хотим работать с профессионалами, которые помогут нам вывести игру на рынок и поддержать нас на этапах производстве продукции и дистрибуции.</p>
                         
                         <p><strong>Партнёрство в маркетинге и продвижении.</strong><br>
-                        Мы верим в наш продукт и готовы вкладывать силы, но нам нужна ваши помощь и опыт в том, чтобы громмо заявить о себе и донести игру до нашей целевой аудитории.</p>
+                        Мы верим в наш продукт и готовы вкладывать силы, но нам нужна ваша мощь и опыт в том, чтобы громмо заявить о себе и донести игру до нашей целевой аудитории.</p>
                     `;
                     break;
             }
