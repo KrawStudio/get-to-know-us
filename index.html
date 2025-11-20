@@ -30,6 +30,17 @@
             position: relative;
         }
         
+        /* Игровое поле */
+        .game-board {
+            position: absolute;
+            width: 2100px;
+            height: 1100px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+        
         /* Заголовки */
         .title-container {
             position: absolute;
@@ -269,6 +280,7 @@
             gap: 20px;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         
         .battle-button {
@@ -291,6 +303,32 @@
             background-color: #555;
             cursor: not-allowed;
             opacity: 0.6;
+        }
+        
+        /* Кнопка-карточка в бою */
+        .card-button {
+            width: 150px;
+            height: 220px;
+            border-radius: 12px;
+            border: none;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin: 10px;
+        }
+        
+        .card-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
+        }
+        
+        .card-button:disabled {
+            cursor: default;
+            transform: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            opacity: 0.7;
         }
         
         /* Результат броска внутри модального окна */
@@ -335,33 +373,13 @@
         #item-doll:hover {
             transform: rotate(-90deg) translateX(90%) translateY(-30px); /* Выдвигается только вверх */
         }
-        
-        /* Карта предмета в бою */
-        .battle-item-card {
-            position: absolute;
-            width: 150px;
-            height: 220px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            z-index: 101;
-            left: 50%;
-            top: 75%;
-            transform: translate(-50%, -50%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            cursor: pointer;
-        }
-        
-        .battle-item-card.show {
-            opacity: 1;
-        }
     </style>
 </head>
 <body>
     <div class="game-container">
+        <!-- Игровое поле -->
+        <div class="game-board" id="game-board"></div>
+        
         <!-- Заголовки -->
         <div class="title-container">
             <h1 class="title">СОН ЖУРАВЛЯ</h1>
@@ -394,7 +412,7 @@
                     <div class="battle-buttons" id="battle-buttons"></div>
                     <div class="roll-result" id="roll-result" style="display: none;"></div>
                 </div>
-                <button id="modal-close">Вернуться к игре</button>
+                <button id="modal-close" style="display: none;">Вернуться к игре</button>
             </div>
         </div>
     </div>
@@ -418,12 +436,14 @@
             activeCardHint: null, // Подсказка для активной карты
             battleState: {
                 firstRollDone: false,
-                dollUsed: false
+                dollUsed: false,
+                swordReceived: false
             }
         };
 
         // DOM элементы
         const deck = document.getElementById('deck');
+        const gameBoard = document.getElementById('game-board');
         const hintRightCenter = document.getElementById('hint-right-center');
         const hintRightDeck = document.getElementById('hint-right-deck');
         const hintBottom = document.getElementById('hint-bottom');
@@ -447,11 +467,12 @@
             showHintRightDeck();
             // Возвращаем карты предметов в исходное состояние
             resetItemCardsPosition();
-            // Удаляем карту предмета из боя, если она есть
-            removeBattleItemCard();
             // Сбрасываем состояние боя
             gameState.battleState.firstRollDone = false;
             gameState.battleState.dollUsed = false;
+            gameState.battleState.swordReceived = false;
+            // Скрываем кнопку "Вернуться к игре"
+            modalClose.style.display = 'none';
         });
 
         // Функция закрытия подсказки
@@ -553,7 +574,7 @@
             startCard.id = 'location-start';
             startCard.dataset.x = '0';
             startCard.dataset.y = '0';
-            document.querySelector('.game-container').appendChild(startCard);
+            gameBoard.appendChild(startCard);
             
             // Добавляем в массив всех локаций
             gameState.allLocations.push({
@@ -571,7 +592,7 @@
             hintUnderCard.style.transform = 'translateX(-50%)';
             hintUnderCard.innerHTML = 'Эффект карты локации: начать игру на знакомство<br>Полученные предметы: куколка-оберег';
             hintUnderCard.id = 'hint-under-start';
-            document.querySelector('.game-container').appendChild(hintUnderCard);
+            gameBoard.appendChild(hintUnderCard);
             
             // Анимация появления
             setTimeout(() => {
@@ -609,7 +630,7 @@
             }
             
             itemCard.style.opacity = '0';
-            document.querySelector('.game-container').appendChild(itemCard);
+            gameBoard.appendChild(itemCard);
             
             // Анимация появления
             setTimeout(() => {
@@ -674,7 +695,7 @@
                         type: 'closed'
                     });
                     
-                    document.querySelector('.game-container').appendChild(locationCard);
+                    gameBoard.appendChild(locationCard);
                     
                     // Анимация появления
                     setTimeout(() => {
@@ -730,7 +751,7 @@
             const cardSize = 220 * gameState.cardScale;
             const spacing = 0; // Карты вплотную друг к другу
             
-            // Центрируем сетку на экране
+            // Центрируем сетку на игровом поле
             const totalWidth = gridWidth * (cardSize + spacing) - spacing;
             const totalHeight = gridHeight * (cardSize + spacing) - spacing;
             
@@ -742,12 +763,13 @@
                 loc.element.style.width = `${cardSize}px`;
                 loc.element.style.height = `${cardSize}px`;
                 
-                const left = 50 + (relativeX - (gridWidth - 1) / 2) * (cardSize + spacing) / (totalWidth / 100);
-                const top = 50 + (relativeY - (gridHeight - 1) / 2) * (cardSize + spacing) / (totalHeight / 100);
+                // Позиционируем карты в пределах игрового поля
+                const left = (relativeX * (cardSize + spacing)) + (2100 - totalWidth) / 2;
+                const top = (relativeY * (cardSize + spacing)) + (1100 - totalHeight) / 2;
                 
-                loc.element.style.left = `${left}%`;
-                loc.element.style.top = `${top}%`;
-                loc.element.style.transform = 'translate(-50%, -50%)';
+                loc.element.style.left = `${left}px`;
+                loc.element.style.top = `${top}px`;
+                loc.element.style.transform = 'none';
             });
             
             // Проверяем и корректируем позиции карт, чтобы они не пересекались с другими элементами
@@ -904,30 +926,6 @@
                     card.style.transform = 'translate(-50%, -50%)';
                 }
             });
-        }
-
-        // Создать карту предмета для боя
-        function createBattleItemCard(itemType) {
-            const battleItemCard = document.createElement('div');
-            battleItemCard.className = 'battle-item-card';
-            battleItemCard.style.backgroundImage = `url("assets/item-${itemType}.png")`;
-            battleItemCard.id = 'battle-item-card';
-            document.querySelector('.game-container').appendChild(battleItemCard);
-            
-            // Показываем карту с анимацией
-            setTimeout(() => {
-                battleItemCard.classList.add('show');
-            }, 100);
-            
-            return battleItemCard;
-        }
-
-        // Удалить карту предмета из боя
-        function removeBattleItemCard() {
-            const battleItemCard = document.getElementById('battle-item-card');
-            if (battleItemCard) {
-                battleItemCard.remove();
-            }
         }
 
         // Обработка клика на карту направления
@@ -1123,7 +1121,7 @@
                     text = `
                         <p>На этой локации применяется эффект: «приоткрыть завесу тайны».</p>
                         
-                        <p>Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душой компании. Мы создаём игру, которая станет его новым козырем в коллекции.</p>
+                        <p>Ядро нашей аудитории — «Игровой лидер». Это человек, который знакомит друзей с новыми играми, «заряжает» компанию, читает правила и является душей компании. Мы создаём игру, которая станет его новым козырем в коллекции.</p>
                         
                         <p>Наша игра идеально подойдёт для трёх сегментов игроков:</p>
                         
@@ -1176,6 +1174,7 @@
             modalTitle.textContent = title;
             modalText.innerHTML = text;
             battleContent.style.display = 'none';
+            modalClose.style.display = 'block';
             modal.classList.add('active');
         }
 
@@ -1263,6 +1262,7 @@
                 }
             }
             
+            modalClose.style.display = 'none';
             modal.classList.add('active');
         }
 
@@ -1278,21 +1278,26 @@
             rollResult.style.display = 'block';
             rollResult.textContent = 'Результат бросков: 5 и 3. Кажется богатырской силушки не хватило... Хорошо, что при начале игры вы получили кое-какой подарок. Попробуйте использовать его!';
             
-            // Создаем карту предмета для боя
-            const dollCard = createBattleItemCard('doll');
-            
-            // Добавляем обработчик для куколки
-            dollCard.onclick = function() {
+            // Создаем кнопку-карточку для куколки
+            const dollButton = document.createElement('button');
+            dollButton.className = 'card-button';
+            dollButton.style.backgroundImage = 'url("assets/item-doll.png")';
+            dollButton.addEventListener('click', () => {
                 useDollAgainstFirstMonster();
-            };
+            });
+            
+            battleButtons.appendChild(dollButton);
             
             gameState.battleState.firstRollDone = true;
         }
 
         // Использование куколки против первого монстра
         function useDollAgainstFirstMonster() {
-            // Убираем куколку из боя
-            removeBattleItemCard();
+            // Убираем кнопку-карточку куколки
+            const dollButton = battleButtons.querySelector('.card-button');
+            if (dollButton) {
+                dollButton.remove();
+            }
             
             // Убираем куколку из инвентаря
             const dollCard = document.getElementById('item-doll');
@@ -1331,17 +1336,24 @@
             // Второй бросок
             rollResult.textContent = 'Результат бросков: 5 и 5. Другое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации «Получить оружие».';
             
-            // Показываем меч-кладенец
+            // Создаем неактивную кнопку-карточку для меча-кладенеца
+            const swordButton = document.createElement('button');
+            swordButton.className = 'card-button';
+            swordButton.style.backgroundImage = 'url("assets/item-sword.png")';
+            swordButton.disabled = true;
+            
+            battleButtons.appendChild(swordButton);
+            
+            // Показываем кнопку "Вернуться к игре"
+            modalClose.style.display = 'block';
+            
+            // Обновляем состояние
+            gameState.monster1Defeated = true;
+            gameState.battleState.swordReceived = true;
+            
+            // Добавляем меч в инвентарь
             setTimeout(() => {
-                const swordCard = createBattleItemCard('sword');
-                
-                // Обновляем состояние
-                gameState.monster1Defeated = true;
-                
-                // Через некоторое время показываем кнопку "Вернуться в игру"
-                setTimeout(() => {
-                    modalClose.style.display = 'block';
-                }, 2000);
+                showItem('sword');
             }, 1000);
         }
 
@@ -1349,6 +1361,9 @@
         function handleSecondMonsterBareHands() {
             rollResult.style.display = 'block';
             rollResult.textContent = 'результат бросков: 6 и 6.\nВау! Да вы опытный боец! Поспешим в путь! И вновь применяем эффект карты локации – за победу над монстром получите предмет. Хотя, наверное, такому силачу уже никакие предметы не нужны';
+            
+            // Показываем кнопку "Вернуться к игре"
+            modalClose.style.display = 'block';
             
             // Показываем амулет
             setTimeout(() => {
@@ -1374,6 +1389,9 @@
             rollResult.style.display = 'block';
             rollResult.textContent = 'результат бросков: 5 и 4.\nВсегда важно грамотно рассчитать силы. Хорошо, что у вас в ножнах оказалось такое оружие! И вновь применяем эффект карты локации – за победу над монстром получите предмет.';
             
+            // Показываем кнопку "Вернуться к игре"
+            modalClose.style.display = 'block';
+            
             // Показываем амулет
             setTimeout(() => {
                 showItem('amulet');
@@ -1393,13 +1411,15 @@
                 rollResult.textContent = 'Результат броска – 3 и 3.\nНеплохо, но против такого чудовища недостаточно. Скорее используйте свой амулет, чтобы сбежать.';
             }
             
-            // Создаем карту предмета для боя
-            const amuletCard = createBattleItemCard('amulet');
-            
-            // Показываем возможность использовать амулет
-            amuletCard.onclick = function() {
+            // Создаем кнопку-карточку для амулета
+            const amuletButton = document.createElement('button');
+            amuletButton.className = 'card-button';
+            amuletButton.style.backgroundImage = 'url("assets/item-amulet.png")';
+            amuletButton.addEventListener('click', () => {
                 useAmuletToEscape();
-            };
+            });
+            
+            battleButtons.appendChild(amuletButton);
         }
 
         // Использование амулета для побега
@@ -1407,8 +1427,11 @@
             // Убираем результат броска
             rollResult.style.display = 'none';
             
-            // Убираем амулет из боя
-            removeBattleItemCard();
+            // Убираем кнопку-карточку амулета
+            const amuletButton = battleButtons.querySelector('.card-button');
+            if (amuletButton) {
+                amuletButton.remove();
+            }
             
             // Убираем амулет из инвентаря
             const amuletCard = document.getElementById('item-amulet');
@@ -1419,6 +1442,9 @@
                     gameState.items = gameState.items.filter(item => item !== 'amulet');
                 }, 500);
             }
+            
+            // Показываем кнопку "Вернуться к игре"
+            modalClose.style.display = 'block';
             
             // Обновляем состояние
             gameState.monster3Defeated = true;
@@ -1453,6 +1479,7 @@
                 Наши тг: гав гав</p>
             `;
             battleContent.style.display = 'none';
+            modalClose.style.display = 'block';
             modal.classList.add('active');
             
             // Обновляем подсказки
