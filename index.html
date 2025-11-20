@@ -88,6 +88,7 @@
         /* Красная подсветка для активной карты */
         .location-card.active {
             box-shadow: 0 0 0 3px #ff0000, 0 8px 16px rgba(0, 0, 0, 0.7);
+            z-index: 3; /* Активная карта всегда поверх других */
         }
         
         .item-card, .direction-card {
@@ -278,10 +279,11 @@
         /* Кнопки сражения внутри модального окна */
         .battle-buttons {
             display: flex;
+            flex-direction: column;
             gap: 20px;
             justify-content: center;
+            align-items: center;
             margin-top: 20px;
-            flex-wrap: wrap;
         }
         
         .battle-button {
@@ -294,6 +296,7 @@
             font-family: 'Playfair Display', serif;
             font-size: 18px;
             transition: background-color 0.3s;
+            width: 300px;
         }
         
         .battle-button:hover {
@@ -317,7 +320,6 @@
             cursor: pointer;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
             transition: transform 0.3s, box-shadow 0.3s;
-            margin: 10px;
         }
         
         .card-button:hover {
@@ -363,15 +365,15 @@
             animation: fadeIn 0.8s ease;
         }
         
-        /* Стиль для карточки куколки */
-        #item-doll {
+        /* Стиль для карточки куколки и меча */
+        .side-item-card {
             transform: rotate(-90deg) translateX(90%); /* Еще сильнее задвинута */
             transition: transform 0.5s ease;
             right: 0;
             top: 50%;
         }
         
-        #item-doll:hover {
+        .side-item-card:hover {
             transform: rotate(-90deg) translateX(90%) translateY(-30px); /* Выдвигается только вверх */
         }
     </style>
@@ -397,7 +399,7 @@
         </div>
         <div class="hint hint-right-deck" id="hint-right-deck" style="display: none;">
             <span class="hint-close" onclick="closeHint('hint-right-deck')">×</span>
-            Доступные действия: <<< Выложить новые карты локаций
+            Доступные действия: <<< <br>Выложить новые карты локаций
         </div>
         <div class="hint hint-bottom" id="hint-bottom" style="display: none;">
             <span class="hint-close" onclick="closeHint('hint-bottom')">×</span>
@@ -439,7 +441,10 @@
                 firstRollDone: false,
                 dollUsed: false,
                 swordReceived: false
-            }
+            },
+            // Порядок открытия локаций
+            locationOrder: ['start', 'about', 'monster1', 'purpose', 'monster2', 'coop', 'monster3', 'team'],
+            openedLocations: [] // Какие локации уже открыты
         };
 
         // DOM элементы
@@ -585,6 +590,9 @@
                 type: 'start'
             });
             
+            // Добавляем стартовую локацию в список открытых
+            gameState.openedLocations.push('start');
+            
             // Создаем подсказку под картой
             const hintUnderCard = document.createElement('div');
             hintUnderCard.className = 'hint-under-card';
@@ -605,6 +613,9 @@
                     showItem('doll');
                 }, 500);
                 
+                // Показываем подсказку справа от колоды одновременно с подсказкой под картой
+                showHintRightDeck();
+                
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
                 gameState.locationGrid['0,0'] = 'start';
@@ -618,12 +629,9 @@
             itemCard.style.backgroundImage = `url("assets/item-${itemType}.png")`;
             itemCard.id = `item-${itemType}`;
             
-            if (itemType === 'doll') {
-                // Для куколки особое позиционирование
-                itemCard.style.right = '0';
-                itemCard.style.top = '50%';
-                itemCard.style.transform = 'rotate(-90deg) translateX(90%)';
-                itemCard.style.transition = 'transform 0.5s ease';
+            if (itemType === 'doll' || itemType === 'sword') {
+                // Для куколки и меча особое позиционирование
+                itemCard.classList.add('side-item-card');
             } else {
                 itemCard.style.left = '60%';
                 itemCard.style.top = '50%';
@@ -641,8 +649,8 @@
                 gameState.items.push(itemType);
             }, 300);
 
-            // Для куколки добавляем обработчик наведения
-            if (itemType === 'doll') {
+            // Для куколки и меча добавляем обработчик наведения
+            if (itemType === 'doll' || itemType === 'sword') {
                 itemCard.addEventListener('mouseenter', () => {
                     itemCard.style.transform = 'rotate(-90deg) translateX(90%) translateY(-30px)';
                 });
@@ -870,8 +878,8 @@
             const itemCards = document.querySelectorAll('.item-card');
             itemCards.forEach(card => {
                 card.style.opacity = '1'; // Возвращаем нормальную прозрачность
-                // Возвращаем поворот для куколки
-                if (card.id === 'item-doll') {
+                // Возвращаем поворот для куколки и меча
+                if (card.id === 'item-doll' || card.id === 'item-sword') {
                     card.style.transform = 'rotate(-90deg) translateX(90%)';
                 } else {
                     card.style.left = '60%';
@@ -933,38 +941,23 @@
             }
         }
 
+        // Определить следующую локацию для открытия
+        function getNextLocationType() {
+            // Простая логика: открываем локации в определенном порядке
+            for (let locationType of gameState.locationOrder) {
+                if (!gameState.openedLocations.includes(locationType)) {
+                    return locationType;
+                }
+            }
+            return 'team'; // Если все открыты, возвращаем команду
+        }
+
         // Открыть карту локации
         function openLocationCard(x, y, direction) {
             const positionKey = `${x},${y}`;
             
-            // Определяем, какую карту открыть в зависимости от текущей локации и направления
-            let locationType;
-            
-            switch(gameState.currentLocation) {
-                case 'start':
-                    locationType = 'about';
-                    break;
-                case 'about':
-                    locationType = 'monster1';
-                    break;
-                case 'monster1':
-                    locationType = 'purpose';
-                    break;
-                case 'purpose':
-                    locationType = 'monster2';
-                    break;
-                case 'monster2':
-                    locationType = 'coop';
-                    break;
-                case 'coop':
-                    locationType = 'monster3';
-                    break;
-                case 'monster3':
-                    locationType = 'team';
-                    break;
-                default:
-                    locationType = 'about';
-            }
+            // Определяем, какую карту открыть
+            const locationType = getNextLocationType();
             
             // Находим карту по координатам
             const locationCard = document.querySelector(`.card.location-card[data-x="${x}"][data-y="${y}"]`);
@@ -987,6 +980,9 @@
                 gameState.locationGrid[positionKey] = locationType;
                 gameState.currentPosition = { x, y };
                 gameState.currentLocation = locationType;
+                
+                // Добавляем локацию в список открытых
+                gameState.openedLocations.push(locationType);
                 
                 // Обновляем тип в массиве всех локаций
                 const locationInArray = gameState.allLocations.find(loc => loc.x === x && loc.y === y);
@@ -1289,7 +1285,7 @@
             // Второй бросок
             rollResult.textContent = 'Результат бросков: 5 и 5. Другое дело! Видим, теперь вы размялись. За победу над монстром применяется эффект локации «Получить оружие».';
             
-            // Создаем неактивную кнопку-карточку для меча-кладенеца
+            // Создаем неактивную кнопку-карточку для меча-кладенеца (под кнопкой)
             const swordButton = document.createElement('button');
             swordButton.className = 'card-button';
             swordButton.style.backgroundImage = 'url("assets/item-sword.png")';
