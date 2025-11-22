@@ -545,7 +545,7 @@
             openedLocations: [], // Какие локации уже открыты
             directionsActive: false, // Активны ли карты направлений
             visitedLocations: {}, // Какие локации уже посещались
-            deckActive: true // Активна ли колода
+            deckActive: true // Активна ли колода - изначально активна только на стартовой локации
         };
 
         // DOM элементы
@@ -584,8 +584,10 @@
             modalClose.style.display = 'none';
             // Делаем карты направлений неактивными
             setDirectionsActive(false);
-            // Активируем колоду
-            setDeckActive(true);
+            // Активируем колоду только если мы на стартовой локации
+            if (gameState.currentLocation === 'start') {
+                setDeckActive(true);
+            }
         });
 
         // Обработчик завершения путешествия
@@ -605,15 +607,19 @@
             gameState.deckActive = active;
             if (active) {
                 deck.classList.remove('inactive');
+                // Показываем подсказку справа от колоды только если колода активна
+                showHintRightDeck();
             } else {
                 deck.classList.add('inactive');
+                // Скрываем подсказку справа от колоды когда колода неактивна
+                hideHintRightDeck();
             }
         }
 
         // Показать подсказку справа от колоды (в левом нижнем углу)
         function showHintRightDeck() {
-            // Показываем только если находимся на новой локации и колода активна
-            if (gameState.deckActive && !isCurrentLocationVisited()) {
+            // Показываем только если колода активна
+            if (gameState.deckActive) {
                 hintRightDeck.style.display = 'block';
             }
         }
@@ -772,6 +778,9 @@
                 
                 // Показываем подсказку справа от колоды одновременно с подсказкой под картой
                 showHintRightDeck();
+                
+                // Активируем колоду на стартовой локации
+                setDeckActive(true);
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
@@ -1306,7 +1315,7 @@
                         
                         <p><strong>Визуалы и эстеты.</strong> Те, для кого важен визуальный стиль. Мы создаем визуал, где старославянские узоры встречаются с лаконичной японской графикой.</p>
                         
-                        <p><strong>Кому понравится? (Смежный игровой опыт):</strong><br>
+                        <p><strong>Кому понравится? (Смечный игровой опыт):</strong><br>
                         Если вы играли в:<br>
                         «Ярость дракулы»,<br>
                         «Шепот за стеной»,<br>
