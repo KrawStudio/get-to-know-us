@@ -127,6 +127,13 @@
             transform: translate(0, 0);
         }
         
+        /* Колода неактивная */
+        .deck.inactive {
+            cursor: default;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
         /* Подсказки */
         .hint {
             position: absolute;
@@ -537,7 +544,8 @@
             locationOrder: ['start', 'about', 'monster1', 'purpose', 'monster2', 'coop', 'monster3', 'team'],
             openedLocations: [], // Какие локации уже открыты
             directionsActive: false, // Активны ли карты направлений
-            visitedLocations: {} // Какие локации уже посещались
+            visitedLocations: {}, // Какие локации уже посещались
+            deckActive: true // Активна ли колода
         };
 
         // DOM элементы
@@ -576,6 +584,8 @@
             modalClose.style.display = 'none';
             // Делаем карты направлений неактивными
             setDirectionsActive(false);
+            // Активируем колоду
+            setDeckActive(true);
         });
 
         // Обработчик завершения путешествия
@@ -590,13 +600,22 @@
             document.getElementById(hintId).style.display = 'none';
         }
 
+        // Установить активность колоды
+        function setDeckActive(active) {
+            gameState.deckActive = active;
+            if (active) {
+                deck.classList.remove('inactive');
+            } else {
+                deck.classList.add('inactive');
+            }
+        }
+
         // Показать подсказку справа от колоды (в левом нижнем углу)
         function showHintRightDeck() {
-            // Показываем только если находимся на новой локации
-            if (gameState.phase !== 'locationCardsPlaced' || isCurrentLocationVisited()) {
-                return;
+            // Показываем только если находимся на новой локации и колода активна
+            if (gameState.deckActive && !isCurrentLocationVisited()) {
+                hintRightDeck.style.display = 'block';
             }
-            hintRightDeck.style.display = 'block';
         }
 
         // Скрыть подсказку справа от колоды
@@ -641,6 +660,8 @@
 
         // Функция обработки клика на колоду
         function handleDeckClick() {
+            if (!gameState.deckActive) return;
+            
             // Скрываем подсказку справа от колоды в центре при нажатии на колоду
             hideHintRightCenter();
             // Скрываем подсказку справа от колоды в углу
@@ -649,6 +670,9 @@
             hideHintBottom();
             // Скрываем подсказку активной карты
             hideActiveCardHint();
+
+            // Делаем колоду неактивной после нажатия
+            setDeckActive(false);
 
             switch(gameState.phase) {
                 case 'start':
