@@ -592,12 +592,7 @@
 
         // Показать подсказку справа от колоды (в левом нижнем углу)
         function showHintRightDeck() {
-            // Показываем только если карты направлений не активны
-            if (!gameState.directionsActive) {
-                hintRightDeck.style.display = 'block';
-            } else {
-                hintRightDeck.style.display = 'none';
-            }
+            hintRightDeck.style.display = 'block';
         }
 
         // Скрыть подсказку справа от колоды
@@ -634,12 +629,8 @@
             directionCards.forEach(card => {
                 if (active) {
                     card.classList.remove('inactive');
-                    // Скрываем подсказку когда карты направлений активны
-                    hideHintRightDeck();
                 } else {
                     card.classList.add('inactive');
-                    // Показываем подсказку когда карты направлений не активны
-                    showHintRightDeck();
                 }
             });
         }
@@ -977,8 +968,6 @@
                     
                     // Скрываем подсказку снизу при выборе направления
                     hideHintBottom();
-                    // Скрываем подсказку выложить карты локации
-                    hideHintRightDeck();
                     // Делаем карты направлений неактивными после выбора
                     setDirectionsActive(false);
                     handleDirectionClick(dir);
@@ -1334,9 +1323,6 @@
             battleContent.style.display = 'none';
             modalClose.style.display = 'block';
             modal.classList.add('active');
-            
-            // Скрываем подсказку справа от колоды при открытии модального окна
-            hideHintRightDeck();
         }
 
         // Показать битву с монстром
@@ -1448,9 +1434,6 @@
             
             modalClose.style.display = 'none';
             modal.classList.add('active');
-            
-            // Скрываем подсказку справа от колоды при открытии модального окна
-            hideHintRightDeck();
         }
 
         // Обработка атаки на первого монстра
@@ -1687,9 +1670,6 @@
             // Обновляем подсказки
             hintRightDeck.style.display = 'none';
             hintBottom.style.display = 'none';
-            
-            // Скрываем подсказку справа от колоды при открытии модального окна
-            hideHintRightDeck();
         }
 
         // Запуск инициализации при загрузке страницы
