@@ -619,7 +619,7 @@
         // Показать подсказку справа от колоды (в левом нижнем углу)
         function showHintRightDeck() {
             // Показываем только если колода активна
-            if (gameState.deckActive) {
+            if (gameState.deckActive && gameState.currentLocation === 'start') {
                 hintRightDeck.style.display = 'block';
             }
         }
@@ -778,9 +778,6 @@
                 
                 // Показываем подсказку справа от колоды одновременно с подсказкой под картой
                 showHintRightDeck();
-                
-                // Активируем колоду на стартовой локации
-                setDeckActive(true);
                 
                 // Сохраняем текущую локацию
                 gameState.currentLocation = 'start';
