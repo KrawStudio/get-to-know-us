@@ -633,6 +633,9 @@
             // Скрываем подсказку активной карты
             hideActiveCardHint();
 
+            // Всегда активируем карты направлений после нажатия на колоду
+            setDirectionsActive(true);
+
             switch(gameState.phase) {
                 case 'start':
                     startGame();
@@ -855,9 +858,6 @@
             // Показываем карты направлений
             showDirectionCards();
             
-            // Активируем карты направлений
-            setDirectionsActive(true);
-            
             // Показываем подсказку снизу
             showHintBottom();
             hintBottomText.innerHTML = 'Доступные действия: Выбрать направление<br><span style="line-height: 0.5;">V<br>V</span>';
@@ -939,7 +939,7 @@
                 directionCard.style.bottom = positions[index].bottom;
                 directionCard.dataset.direction = dir;
                 
-                // Сначала карты направлений неактивны
+                // Карты направлений активны или неактивны в зависимости от состояния игры
                 if (!gameState.directionsActive) {
                     directionCard.classList.add('inactive');
                 }
@@ -1087,7 +1087,7 @@
                     // Скрываем подсказку активной карты, если она была
                     hideActiveCardHint();
                     
-                    // Активируем карты направлений снова
+                    // Активируем карты направлений снова (чтобы можно было выбрать другое направление)
                     setDirectionsActive(true);
                     
                     // Показываем подсказку снизу
