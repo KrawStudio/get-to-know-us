@@ -632,8 +632,6 @@
             hideHintBottom();
             // Скрываем подсказку активной карты
             hideActiveCardHint();
-            // Скрываем подсказку "уже побывали"
-            hideAlreadyVisitedHint();
 
             switch(gameState.phase) {
                 case 'start':
@@ -1013,77 +1011,6 @@
             }
         }
 
-        // Функция для показа подсказки "Тут мы уже побывали"
-        function showAlreadyVisitedHint() {
-            // Скрываем другие подсказки
-            hideActiveCardHint();
-            
-            // Создаем или обновляем подсказку
-            let visitedHint = document.getElementById('hint-already-visited');
-            
-            if (!visitedHint) {
-                visitedHint = document.createElement('div');
-                visitedHint.id = 'hint-already-visited';
-                visitedHint.className = 'hint-under-card';
-                visitedHint.style.left = '50%';
-                visitedHint.style.top = 'calc(50% + 130px)';
-                visitedHint.style.transform = 'translateX(-50%)';
-                visitedHint.innerHTML = 'Тут мы уже побывали. Выберите карту направления еще раз :)';
-                visitedHint.style.opacity = '0';
-                document.querySelector('.game-container').appendChild(visitedHint);
-                
-                // Анимация появления
-                setTimeout(() => {
-                    visitedHint.style.opacity = '1';
-                }, 10);
-                
-                // Через 3 секунды скрываем подсказку
-                visitedHint.hideTimer = setTimeout(() => {
-                    if (visitedHint && visitedHint.parentNode) {
-                        visitedHint.style.opacity = '0';
-                        setTimeout(() => {
-                            if (visitedHint && visitedHint.parentNode) {
-                                visitedHint.remove();
-                            }
-                        }, 500);
-                    }
-                }, 3000);
-            } else {
-                // Если подсказка уже есть, обновляем ее позицию и сбрасываем таймер
-                visitedHint.style.left = '50%';
-                visitedHint.style.top = 'calc(50% + 130px)';
-                visitedHint.style.transform = 'translateX(-50%)';
-                visitedHint.style.opacity = '1';
-                
-                // Удаляем старый таймер и устанавливаем новый
-                clearTimeout(visitedHint.hideTimer);
-                visitedHint.hideTimer = setTimeout(() => {
-                    if (visitedHint && visitedHint.parentNode) {
-                        visitedHint.style.opacity = '0';
-                        setTimeout(() => {
-                            if (visitedHint && visitedHint.parentNode) {
-                                visitedHint.remove();
-                            }
-                        }, 500);
-                    }
-                }, 3000);
-            }
-        }
-
-        // Скрыть подсказку "уже побывали"
-        function hideAlreadyVisitedHint() {
-            const visitedHint = document.getElementById('hint-already-visited');
-            if (visitedHint) {
-                clearTimeout(visitedHint.hideTimer);
-                visitedHint.style.opacity = '0';
-                setTimeout(() => {
-                    if (visitedHint.parentNode) {
-                        visitedHint.remove();
-                    }
-                }, 500);
-            }
-        }
-
         // Изменить позицию карт предметов для боя
         function setupItemCardsForBattle() {
             const itemCards = document.querySelectorAll('.item-card');
@@ -1159,9 +1086,6 @@
                     
                     // Скрываем подсказку активной карты, если она была
                     hideActiveCardHint();
-                    
-                    // Показываем подсказку "Тут мы уже побывали"
-                    showAlreadyVisitedHint();
                     
                     // Активируем карты направлений снова
                     setDirectionsActive(true);
